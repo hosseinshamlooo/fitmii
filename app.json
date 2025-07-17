@@ -1,5 +1,6 @@
 {
   "expo": {
+    "scheme": "fitmii",
     "name": "fitmii",
     "slug": "fitmii",
     "version": "1.0.0",
@@ -23,6 +24,7 @@
       "edgeToEdgeEnabled": true
     },
     "web": {
+      "bundler": "metro",
       "favicon": "./assets/favicon.png"
     }
   }
