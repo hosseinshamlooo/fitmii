@@ -1,6 +1,7 @@
 import { View, Text, TouchableOpacity } from "react-native";
 import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Link } from "expo-router";
 
 const Home = () => {
   return (
@@ -24,7 +25,7 @@ const Home = () => {
         </Text>
         {/* Short Subheading */}
         <Text
-          className="text-base text-center text-text mb-10"
+          className="text-xl text-center text-text mb-10"
           style={{ fontFamily: "Outfit-Regular" }}
         >
           Transform your fitness journey.{"\n"}Get smarter, stronger, every day.
@@ -33,12 +34,13 @@ const Home = () => {
       {/* Buttons at the bottom */}
       <View className="w-full mb-6">
         <TouchableOpacity className="bg-accent py-4 rounded-full mb-3 w-full">
-          <Text
+          <Link
+            href="/screens/onboarding/OnboardingGender"
             className="text-background text-center text-lg"
             style={{ fontFamily: "Outfit-Bold" }}
           >
             Get Started
-          </Text>
+          </Link>
         </TouchableOpacity>
         <TouchableOpacity className="border-2 border-accent py-4 rounded-full w-full">
           <Text
