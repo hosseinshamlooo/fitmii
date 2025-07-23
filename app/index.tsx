@@ -2,6 +2,7 @@ import { View, Text, TouchableOpacity } from "react-native";
 import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Link } from "expo-router";
+import Button from "./components/Button";
 
 const Home = () => {
   return (
@@ -33,15 +34,9 @@ const Home = () => {
       </View>
       {/* Buttons at the bottom */}
       <View className="w-full mb-6">
-        <TouchableOpacity className="bg-accent py-4 rounded-full mb-3 w-full">
-          <Link
-            href="/screens/onboarding/OnboardingGender"
-            className="text-background text-center text-lg"
-            style={{ fontFamily: "Outfit-Bold" }}
-          >
-            Get Started
-          </Link>
-        </TouchableOpacity>
+        <Button href="/screens/onboarding/OnboardingGender" className="mb-3">
+          Get Started
+        </Button>
         <TouchableOpacity className="border-2 border-accent py-4 rounded-full w-full">
           <Text
             className="text-accent text-center text-lg"
