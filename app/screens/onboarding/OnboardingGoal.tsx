@@ -85,7 +85,7 @@ export default function OnboardingGoal() {
           {GOALS.map((goal) => (
             <TouchableOpacity
               key={goal.key}
-              className={`flex-row items-center rounded-2xl border-2 mb-4 px-4 py-4 bg-background ${
+              className={`flex-row items-center rounded-2xl border-2 mb-6 px-4 py-5 bg-background ${
                 selectedGoal === goal.key
                   ? "border-accent bg-accent/5"
                   : "border-text"

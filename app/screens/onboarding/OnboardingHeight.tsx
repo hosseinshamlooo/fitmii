@@ -16,7 +16,7 @@ export default function OnboardingHeight() {
   const [selectedCm, setSelectedCm] = useState<number>(170);
 
   const scrollRef = useRef<ScrollView>(null);
-  const ITEM_HEIGHT = 50;
+  const ITEM_HEIGHT = 60;
   const VISIBLE_ITEMS = 7;
 
   const cmHeights = Array.from({ length: 81 }, (_, i) => 140 + i); // 140–220
@@ -30,7 +30,9 @@ export default function OnboardingHeight() {
 
   const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const offsetY = e.nativeEvent.contentOffset.y;
-    const index = Math.round(offsetY / ITEM_HEIGHT);
+    const paddingTop = ITEM_HEIGHT * ((VISIBLE_ITEMS - 1) / 2);
+    const adjustedOffsetY = offsetY - paddingTop;
+    const index = Math.round(adjustedOffsetY / ITEM_HEIGHT) + 5; // Move selection down by 2 positions
     const clampedIndex = Math.max(0, Math.min(cmHeights.length - 1, index));
     const newSelectedCm = cmHeights[clampedIndex];
     if (newSelectedCm !== selectedCm) {
@@ -39,15 +41,7 @@ export default function OnboardingHeight() {
   };
 
   const handleScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const offsetY = e.nativeEvent.contentOffset.y;
-    const index = Math.round(offsetY / ITEM_HEIGHT);
-    const clampedIndex = Math.max(0, Math.min(cmHeights.length - 1, index));
-
-    // Snap to the nearest item
-    scrollRef.current?.scrollTo({
-      y: clampedIndex * ITEM_HEIGHT,
-      animated: true,
-    });
+    // No snapping - let the scroll position remain where the user left it
   };
 
   // Set initial scroll position
@@ -84,40 +78,49 @@ export default function OnboardingHeight() {
         </View>
 
         {/* Unit toggle */}
-        <View className="flex-row mb-6">
+        <View className="flex-row mb-6 bg-accent/15 rounded-full p-1">
           <TouchableOpacity
             onPress={() => setUnit("cm")}
-            className={`px-4 py-2 rounded-full ${
-              unit === "cm" ? "bg-accent" : "bg-text"
-            } mx-2`}
+            className={`px-6 py-2 rounded-full ${
+              unit === "cm" ? "bg-accent" : "bg-transparent"
+            }`}
           >
-            <Text className="text-background">Metric</Text>
+            <Text
+              className={unit === "cm" ? "text-background" : "text-text"}
+              style={{ fontFamily: "Outfit-SemiBold" }}
+            >
+              cm
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => setUnit("ft")}
-            className={`px-4 py-2 rounded-full ${
-              unit === "ft" ? "bg-accent" : "bg-text"
-            } mx-2`}
+            className={`px-6 py-2 rounded-full ${
+              unit === "ft" ? "bg-accent" : "bg-transparent"
+            }`}
           >
-            <Text className="text-background">Imperial</Text>
+            <Text
+              className={unit === "ft" ? "text-background" : "text-text"}
+              style={{ fontFamily: "Outfit-SemiBold" }}
+            >
+              ft
+            </Text>
           </TouchableOpacity>
         </View>
 
         {/* Picker */}
-        <View className="h-[350px] justify-center overflow-hidden">
+        <View className="h-[400px] justify-center overflow-hidden mt-8">
           <ScrollView
             ref={scrollRef}
             showsVerticalScrollIndicator={false}
-            snapToInterval={ITEM_HEIGHT}
             decelerationRate="normal"
             contentContainerStyle={{
               alignItems: "center",
               paddingVertical: ITEM_HEIGHT * ((VISIBLE_ITEMS - 1) / 2),
             }}
             onScroll={handleScroll}
-            onMomentumScrollEnd={handleScrollEnd}
-            onScrollEndDrag={handleScrollEnd}
             scrollEventThrottle={16}
+            bounces={false}
+            overScrollMode="never"
           >
             {cmHeights.map((height, index) => {
               const idx = index;
@@ -141,7 +144,7 @@ export default function OnboardingHeight() {
               }
 
               return (
-                <View key={height} className="my-2">
+                <View key={height} className="my-3">
                   <Text
                     className={`${textSize} ${textColor} ${opacity}`}
                     style={{ fontFamily: "Outfit-Bold" }}

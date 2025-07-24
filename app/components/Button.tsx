@@ -17,7 +17,7 @@ export default function Button({
   href,
   className = "",
 }: ButtonProps) {
-  const baseClass = `py-4 rounded-full ${disabled ? "bg-gray-300" : "bg-accent"} ${className}`;
+  const baseClass = `py-4 rounded-full ${disabled ? "bg-accent/15" : "bg-accent"} ${className}`;
   const textClass = "text-center text-lg text-white";
   const textStyle = { fontFamily: "Outfit-Bold" };
 

@@ -37,11 +37,11 @@ export default function OnboardingFocusAreas() {
             Select the areas you want{"\n"}to focus on
           </Text>
         </View>
-        <View className="flex-row flex-wrap justify-center mb-8 gap-2 px-2">
+        <View className="flex-row flex-wrap justify-center mb-8 gap-3 px-2">
           {FOCUS_AREAS.map((area) => (
             <TouchableOpacity
               key={area}
-              className={`px-6 py-3 rounded-full border-2 mb-2 mx-1 ${
+              className={`px-6 py-3 rounded-full border-2 mb-3 mx-1 ${
                 selectedAreas.includes(area)
                   ? "bg-accent border-accent"
                   : "bg-background border-text"
