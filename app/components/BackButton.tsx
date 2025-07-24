@@ -1,17 +1,17 @@
 import React from "react";
 import { TouchableOpacity } from "react-native";
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function BackButton({
   style = {},
-  iconColor = "black",
+  iconColor = "#17e1c5",
   iconSize = 24,
 }) {
   const navigation = useNavigation();
   return (
     <TouchableOpacity
-      style={[{ position: "absolute", left: 24, top: 45, zIndex: 10 }, style]}
+      style={[{ position: "absolute", left: 24, top: 47, zIndex: 10 }, style]}
       onPress={() => navigation.goBack()}
       hitSlop={16}
     >

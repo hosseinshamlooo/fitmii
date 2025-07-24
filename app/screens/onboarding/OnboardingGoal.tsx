@@ -60,33 +60,35 @@ export default function OnboardingGoal() {
 
   // For consistent question Y position, match the margin from gender page (mt-6 mb-8)
   return (
-    <View className="flex-1 bg-white justify-between">
+    <View className="flex-1 bg-background justify-between">
       {/* Back Arrow */}
       <BackButton />
       {/* Animated Progress Bar */}
       <ProgressBar progress={progress} />
       {/* Content */}
-      <View className="flex-1 items-center justify-center">
-        <Text
-          className="text-3xl text-center mt-6 mb-2 text-black"
-          style={{ fontFamily: "Outfit-Bold" }}
-        >
-          What's your goal?
-        </Text>
-        <Text
-          className="text-base text-center mb-8 text-gray-700"
-          style={{ fontFamily: "Outfit-Regular" }}
-        >
-          Your coach will design your{`\n`}workouts that best suit your goal
-        </Text>
+      <View className="flex-1 items-center">
+        <View className="mt-16 mb-8">
+          <Text
+            className="text-3xl text-center text-primary"
+            style={{ fontFamily: "Outfit-Bold" }}
+          >
+            What's your goal?
+          </Text>
+          <Text
+            className="text-base text-center mt-2 text-text"
+            style={{ fontFamily: "Outfit-Regular" }}
+          >
+            Your coach will design your{`\n`}workouts that best suit your goal
+          </Text>
+        </View>
         <View className="w-full px-4">
           {GOALS.map((goal) => (
             <TouchableOpacity
               key={goal.key}
-              className={`flex-row items-center rounded-2xl border-2 mb-4 px-4 py-4 bg-white ${
+              className={`flex-row items-center rounded-2xl border-2 mb-4 px-4 py-4 bg-background ${
                 selectedGoal === goal.key
                   ? "border-accent bg-accent/5"
-                  : "border-gray-300"
+                  : "border-text"
               }`}
               onPress={() => setSelectedGoal(goal.key as any)}
               activeOpacity={0.85}
@@ -95,12 +97,15 @@ export default function OnboardingGoal() {
                 {goal.emoji}
               </Text>
               <View className="flex-1">
-                <Text className="text-lg" style={{ fontFamily: "Outfit-Bold" }}>
+                <Text
+                  className="text-lg text-primary"
+                  style={{ fontFamily: "Outfit-Bold" }}
+                >
                   {goal.label}
                 </Text>
                 {goal.description ? (
                   <Text
-                    className="text-gray-600 text-base"
+                    className="text-text text-base"
                     style={{ fontFamily: "Outfit-Regular" }}
                   >
                     {goal.description}
@@ -109,7 +114,7 @@ export default function OnboardingGoal() {
               </View>
               {selectedGoal === goal.key && (
                 <View className="ml-2">
-                  <FontAwesome name="check-circle" size={24} color="#00C781" />
+                  <FontAwesome name="check-circle" size={24} color="#17e1c5" />
                 </View>
               )}
             </TouchableOpacity>

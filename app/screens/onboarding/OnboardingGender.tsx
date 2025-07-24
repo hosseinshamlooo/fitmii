@@ -13,23 +13,25 @@ export default function OnboardingGender() {
   const navigation = useNavigation();
 
   return (
-    <View className="flex-1 bg-white px-6">
+    <View className="flex-1 bg-background px-6">
       <BackButton />
       <ProgressBar progress={0.2} />
-      <View>
-        <Text
-          className="text-3xl text-center mt-14 mb-8 text-black"
-          style={{ fontFamily: "Outfit-Bold" }}
-        >
-          What's your gender?
-        </Text>
+      <View className="flex-1 items-center">
+        <View className="mt-16 mb-8">
+          <Text
+            className="text-3xl text-center text-primary"
+            style={{ fontFamily: "Outfit-Bold" }}
+          >
+            What's your gender?
+          </Text>
+        </View>
         <View className="flex-row justify-center mb-8">
           {/* Male Card */}
           <TouchableOpacity
             className={`items-center mx-4 p-2 rounded-2xl border-2 ${
               selectedGender === "male"
                 ? "border-accent bg-accent/10"
-                : "border-gray-200 bg-white"
+                : "border-text bg-background"
             }`}
             onPress={() => setSelectedGender("male")}
             activeOpacity={0.8}
@@ -37,7 +39,7 @@ export default function OnboardingGender() {
             <FontAwesome5
               name="male"
               size={100}
-              color={selectedGender === "male" ? "#00C781" : "black"}
+              color={selectedGender === "male" ? "#17e1c5" : "#6ea49d"}
             />
           </TouchableOpacity>
           {/* Female Card */}
@@ -45,7 +47,7 @@ export default function OnboardingGender() {
             className={`items-center mx-4 p-2 rounded-2xl border-2 ${
               selectedGender === "female"
                 ? "border-accent bg-accent/10"
-                : "border-gray-200 bg-white"
+                : "border-text bg-background"
             }`}
             onPress={() => setSelectedGender("female")}
             activeOpacity={0.8}
@@ -53,7 +55,7 @@ export default function OnboardingGender() {
             <FontAwesome5
               name="female"
               size={100}
-              color={selectedGender === "female" ? "#00C781" : "black"}
+              color={selectedGender === "female" ? "#17e1c5" : "#6ea49d"}
             />
           </TouchableOpacity>
         </View>

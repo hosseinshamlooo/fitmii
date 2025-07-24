@@ -5,11 +5,11 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        background: '#FFFFFF', // 60% — Base
-        primary: '#007AFF',    // 30% — Primary CTA
-        accent: '#00C781',     // 10% — Success/Progress
+        background: '#0e1423', // 60% — Base
+        primary: '#a8e8df',    // 30% — Primary CTA
+        accent: '#17e1c5',     // 10% — Success/Progress
         error: '#FF3B30',      // Error/Alert
-        text: '#222222',       // Text Primary
+        text: '#6ea49d',       // Text Primary
       },
       fontFamily: {
         outfit: ["Outfit-Regular", "sans-serif"],
