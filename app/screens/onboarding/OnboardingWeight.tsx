@@ -19,14 +19,40 @@ export default function OnboardingWeight() {
   const ITEM_WIDTH = 60;
 
   const kgWeights = Array.from({ length: 145 }, (_, i) => 36 + i); // 36–180 kg
-  const lbsWeights = Array.from({ length: 321 }, (_, i) => 80 + i); // 80–400 lbs
 
   const kgToLbs = (kg: number) => Math.round(kg * 2.20462);
   const lbsToKg = (lbs: number) => Math.round(lbs / 2.20462);
 
+  // Mock height from previous screen (you'll need to get this from your navigation state)
+  const selectedHeight = 170; // cm
+
+  const calculateBMI = (weightKg: number, heightCm: number) => {
+    const heightM = heightCm / 100;
+    return (weightKg / (heightM * heightM)).toFixed(1);
+  };
+
+  const getBMIMessage = (bmi: number) => {
+    if (bmi < 18.5) return "You're underweight. Consider gaining some weight.";
+    if (bmi < 25) return "You've got a great figure! Keep it up!";
+    if (bmi < 30) return "You're overweight. Consider losing some weight.";
+    return "You're obese. Consider significant weight loss.";
+  };
+
+  const getBMIColor = (bmi: number) => {
+    if (bmi < 18.5) return "text-orange-600"; // Underweight - dark orange
+    if (bmi < 25) return "text-green-600"; // Healthy - dark green
+    if (bmi < 30) return "text-orange-600"; // Overweight - dark orange
+    return "text-red-600"; // Obese - dark red
+  };
+
+  const lbsWeights = Array.from({ length: 321 }, (_, i) => 80 + i); // 80–400 lbs (80 at index 0)
+
+  // Debug: log the first few lbs values
+  console.log("Lbs array starts with:", lbsWeights.slice(0, 10));
+
   const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const offsetX = e.nativeEvent.contentOffset.x;
-    const centerOffset = unit === "kg" ? 3 : -7; // Different offset for lbs
+    const centerOffset = unit === "kg" ? -2 : -6; // Different offset for lbs
     const index = Math.round(offsetX / ITEM_WIDTH) + centerOffset;
     const currentWeights = unit === "kg" ? kgWeights : lbsWeights;
     const clampedIndex = Math.max(
@@ -34,16 +60,7 @@ export default function OnboardingWeight() {
       Math.min(currentWeights.length - 1, index)
     );
     const newWeight = currentWeights[clampedIndex];
-    if (unit === "kg") {
-      if (newWeight !== selectedWeight) {
-        setSelectedWeight(newWeight);
-      }
-    } else {
-      const newKg = lbsToKg(newWeight);
-      if (newKg !== selectedWeight) {
-        setSelectedWeight(newKg);
-      }
-    }
+    setSelectedWeight(newWeight);
   };
 
   // Set initial scroll position
@@ -68,11 +85,11 @@ export default function OnboardingWeight() {
         });
       }, 50);
     } else {
-      const selectedLbs = kgToLbs(selectedWeight);
-      const index = lbsWeights.indexOf(selectedLbs);
+      // For lbs, show index 75 (155lbs) in the center
+      const centerIndex = 75;
       setTimeout(() => {
         scrollRef.current?.scrollTo({
-          x: index * ITEM_WIDTH,
+          x: centerIndex * ITEM_WIDTH,
           animated: true,
         });
       }, 50);
@@ -132,7 +149,7 @@ export default function OnboardingWeight() {
         </View>
 
         {/* Picker */}
-        <View className="h-[200px] justify-center overflow-hidden relative w-96">
+        <View className="h-[200px] justify-end overflow-hidden relative w-96">
           <ScrollView
             ref={scrollRef}
             horizontal={true}
@@ -143,22 +160,18 @@ export default function OnboardingWeight() {
               paddingHorizontal: ITEM_WIDTH * 2,
             }}
             onScroll={handleScroll}
-            scrollEventThrottle={16}
+            scrollEventThrottle={unit === "kg" ? 8 : 4}
             bounces={false}
             overScrollMode="never"
           >
             {(unit === "kg" ? kgWeights : lbsWeights).map((weight, index) => {
               const currentWeights = unit === "kg" ? kgWeights : lbsWeights;
-              const selectedWeightInUnit =
-                unit === "kg" ? selectedWeight : kgToLbs(selectedWeight);
-              const selectedIdx = currentWeights.indexOf(selectedWeightInUnit);
+              const selectedIdx = currentWeights.indexOf(selectedWeight);
               const diff = Math.abs(selectedIdx - index);
 
               // Debug: log the selection
               if (index === selectedIdx) {
-                console.log(
-                  `Selected: ${unit === "kg" ? weight : kgToLbs(weight)}${unit} at index ${index}`
-                );
+                console.log(`Selected: ${weight}${unit} at index ${index}`);
               }
 
               let textSize = "text-4xl";
@@ -192,7 +205,7 @@ export default function OnboardingWeight() {
 
           {/* Triangle Indicator */}
           <View
-            className="absolute bottom-8 self-center"
+            className="absolute bottom-4 self-center"
             style={{
               width: 0,
               height: 0,
@@ -207,12 +220,43 @@ export default function OnboardingWeight() {
             }}
           />
         </View>
+
+        {/* BMI Display */}
+        <View className="bg-primary rounded-xl p-6 mb-6 w-96 shadow-sm border-2 border-accent">
+          <View className="flex-row items-center justify-between mb-3">
+            <Text
+              className="text-xl text-background"
+              style={{ fontFamily: "Outfit-Bold" }}
+            >
+              YOUR CURRENT BMI
+            </Text>
+            <View className="w-6 h-6 bg-accent rounded-full items-center justify-center">
+              <Text className="text-xs text-background">i</Text>
+            </View>
+          </View>
+          <View className="flex-row items-center justify-between">
+            <Text
+              className={`text-4xl ${getBMIColor(parseFloat(calculateBMI(selectedWeight, selectedHeight)))}`}
+              style={{ fontFamily: "Outfit-Bold" }}
+            >
+              {calculateBMI(selectedWeight, selectedHeight)}
+            </Text>
+            <Text
+              className="text-base text-background flex-1 ml-4"
+              style={{ fontFamily: "Outfit-Regular" }}
+            >
+              {getBMIMessage(
+                parseFloat(calculateBMI(selectedWeight, selectedHeight))
+              )}
+            </Text>
+          </View>
+        </View>
       </View>
 
       <View className="mb-16 items-center">
         <View className="mb-5 w-[370px]">
           <Button
-            href="/screens/onboarding/OnboardingAge"
+            href="/screens/dashboard/Dashboard"
             disabled={!selectedWeight}
           >
             Continue
