@@ -10,6 +10,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import ButtonNavBar from "../../components/ButtonNavBar";
+import TrainingBreakdownCard from "../../components/TrainingBreakdownCard";
 
 const { width } = Dimensions.get("window");
 
@@ -36,6 +37,53 @@ const Dashboard = () => {
   ];
 
   const maxWorkouts = Math.max(...workoutData.map((w) => w.count));
+
+  // Dummy data for training breakdown
+  const muscleGroupData = {
+    "This Week": {
+      SHOULDERS: {
+        sets: 12,
+        volume: 2400,
+        percentage: 23.53,
+        color: "#8B5CF6",
+      },
+      CHEST: { sets: 15, volume: 2800, percentage: 29.41, color: "#EF4444" },
+      BACK: { sets: 8, volume: 1600, percentage: 15.69, color: "#3B82F6" },
+      ARMS: { sets: 10, volume: 1800, percentage: 19.61, color: "#F97316" },
+      LEGS: { sets: 6, volume: 1500, percentage: 11.76, color: "#10B981" },
+    },
+    "This Month": {
+      SHOULDERS: { sets: 45, volume: 9000, percentage: 25.0, color: "#8B5CF6" },
+      CHEST: { sets: 52, volume: 10400, percentage: 28.89, color: "#EF4444" },
+      BACK: { sets: 38, volume: 7600, percentage: 21.11, color: "#3B82F6" },
+      ARMS: { sets: 42, volume: 8400, percentage: 23.33, color: "#F97316" },
+      LEGS: { sets: 23, volume: 4600, percentage: 12.78, color: "#10B981" },
+    },
+    "This Year": {
+      SHOULDERS: {
+        sets: 180,
+        volume: 36000,
+        percentage: 22.5,
+        color: "#8B5CF6",
+      },
+      CHEST: { sets: 210, volume: 42000, percentage: 26.25, color: "#EF4444" },
+      BACK: { sets: 165, volume: 33000, percentage: 20.63, color: "#3B82F6" },
+      ARMS: { sets: 195, volume: 39000, percentage: 24.38, color: "#F97316" },
+      LEGS: { sets: 90, volume: 18000, percentage: 11.25, color: "#10B981" },
+    },
+    Lifetime: {
+      SHOULDERS: {
+        sets: 720,
+        volume: 144000,
+        percentage: 24.0,
+        color: "#8B5CF6",
+      },
+      CHEST: { sets: 780, volume: 156000, percentage: 26.0, color: "#EF4444" },
+      BACK: { sets: 600, volume: 120000, percentage: 20.0, color: "#3B82F6" },
+      ARMS: { sets: 690, volume: 138000, percentage: 23.0, color: "#F97316" },
+      LEGS: { sets: 360, volume: 72000, percentage: 12.0, color: "#10B981" },
+    },
+  };
 
   const handleBarPress = (index: number) => {
     setSelectedWeek(selectedWeek === index ? null : index);
@@ -269,7 +317,7 @@ const Dashboard = () => {
                           </Text>
                         )}
                         <View
-                          className={`w-6 rounded-t-sm ${
+                          className={`w-6 rounded-t-lg ${
                             week.count > 0 ? "bg-accent" : "bg-gray-600"
                           } ${selectedWeek === index ? "opacity-100" : "opacity-80"}`}
                           style={{
@@ -290,6 +338,8 @@ const Dashboard = () => {
             </View>
           </View>
         </View>
+
+        <TrainingBreakdownCard muscleGroupData={muscleGroupData} />
       </ScrollView>
       <ButtonNavBar activeTab={activeTab} onTabPress={handleTabPress} />
     </SafeAreaView>
