@@ -11,6 +11,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import ButtonNavBar from "../../components/ButtonNavBar";
 import TrainingBreakdownCard from "../../components/TrainingBreakdownCard";
+import ProgressionChart from "../../components/ProgressionChart";
 
 const { width } = Dimensions.get("window");
 
@@ -83,6 +84,39 @@ const Dashboard = () => {
       ARMS: { sets: 690, volume: 138000, percentage: 23.0, color: "#F97316" },
       LEGS: { sets: 360, volume: 72000, percentage: 12.0, color: "#10B981" },
     },
+  };
+
+  // Dummy progression data
+  const progressionData = {
+    "This Week": [
+      { volume: 1200, sets: 15, reps: 150, date: "Mon" },
+      { volume: 1400, sets: 18, reps: 180, date: "Tue" },
+      { volume: 1600, sets: 20, reps: 200, date: "Wed" },
+      { volume: 1800, sets: 22, reps: 220, date: "Thu" },
+      { volume: 2000, sets: 25, reps: 250, date: "Fri" },
+      { volume: 2200, sets: 28, reps: 280, date: "Sat" },
+      { volume: 2400, sets: 30, reps: 300, date: "Sun" },
+    ],
+    "This Month": [
+      { volume: 8000, sets: 80, reps: 800, date: "Week 1" },
+      { volume: 10000, sets: 100, reps: 1000, date: "Week 2" },
+      { volume: 12000, sets: 120, reps: 1200, date: "Week 3" },
+      { volume: 14000, sets: 140, reps: 1400, date: "Week 4" },
+    ],
+    "This Year": [
+      { volume: 50000, sets: 500, reps: 5000, date: "Jan" },
+      { volume: 60000, sets: 600, reps: 6000, date: "Feb" },
+      { volume: 70000, sets: 700, reps: 7000, date: "Mar" },
+      { volume: 80000, sets: 800, reps: 8000, date: "Apr" },
+      { volume: 90000, sets: 900, reps: 9000, date: "May" },
+      { volume: 100000, sets: 1000, reps: 10000, date: "Jun" },
+    ],
+    Lifetime: [
+      { volume: 200000, sets: 2000, reps: 20000, date: "2020" },
+      { volume: 300000, sets: 3000, reps: 30000, date: "2021" },
+      { volume: 400000, sets: 4000, reps: 40000, date: "2022" },
+      { volume: 500000, sets: 5000, reps: 50000, date: "2023" },
+    ],
   };
 
   const handleBarPress = (index: number) => {
@@ -340,6 +374,7 @@ const Dashboard = () => {
         </View>
 
         <TrainingBreakdownCard muscleGroupData={muscleGroupData} />
+        <ProgressionChart progressionData={progressionData} />
       </ScrollView>
       <ButtonNavBar activeTab={activeTab} onTabPress={handleTabPress} />
     </SafeAreaView>
