@@ -25,6 +25,55 @@ const ProgressionChart: React.FC<ProgressionChartProps> = ({
   const [showMetricDropdown, setShowMetricDropdown] = useState<boolean>(false);
   const [selectedDataPoint, setSelectedDataPoint] = useState<any>(null);
 
+  // Individual time filters for each chart
+  const [bodyWeightTimeFilter, setBodyWeightTimeFilter] =
+    useState<string>("This Week");
+  const [totalVolumeTimeFilter, setTotalVolumeTimeFilter] =
+    useState<string>("This Week");
+  const [bodyFatTimeFilter, setBodyFatTimeFilter] =
+    useState<string>("This Week");
+  const [bodyMeasurementsTimeFilter, setBodyMeasurementsTimeFilter] =
+    useState<string>("This Week");
+
+  // Individual dropdown states for each chart
+  const [showBodyWeightTimeDropdown, setShowBodyWeightTimeDropdown] =
+    useState<boolean>(false);
+  const [showTotalVolumeTimeDropdown, setShowTotalVolumeTimeDropdown] =
+    useState<boolean>(false);
+  const [showBodyFatTimeDropdown, setShowBodyFatTimeDropdown] =
+    useState<boolean>(false);
+  const [
+    showBodyMeasurementsTimeDropdown,
+    setShowBodyMeasurementsTimeDropdown,
+  ] = useState<boolean>(false);
+
+  // Function to close all other dropdowns when opening one
+  const closeAllDropdowns = () => {
+    setShowBodyWeightTimeDropdown(false);
+    setShowTotalVolumeTimeDropdown(false);
+    setShowBodyFatTimeDropdown(false);
+    setShowBodyMeasurementsTimeDropdown(false);
+  };
+
+  // Function to handle dropdown toggle without affecting data
+  const toggleDropdown = (dropdownType: string) => {
+    closeAllDropdowns();
+    switch (dropdownType) {
+      case "bodyWeight":
+        setShowBodyWeightTimeDropdown(true);
+        break;
+      case "totalVolume":
+        setShowTotalVolumeTimeDropdown(true);
+        break;
+      case "bodyFat":
+        setShowBodyFatTimeDropdown(true);
+        break;
+      case "bodyMeasurements":
+        setShowBodyMeasurementsTimeDropdown(true);
+        break;
+    }
+  };
+
   const timeFilterOptions = [
     "This Week",
     "This Month",
@@ -67,23 +116,33 @@ const ProgressionChart: React.FC<ProgressionChartProps> = ({
   const bodyFat = ["bodyfat"];
   const bodyMeasurements = ["arms", "chest", "shoulders", "neck", "quads"];
 
-  // Filter selected metrics by category
-  const selectedBodyWeight = selectedMetrics.filter((metric) =>
-    bodyWeight.includes(metric)
+  // Memoize the filtered arrays to prevent unnecessary re-renders
+  const selectedBodyWeight = useMemo(
+    () => selectedMetrics.filter((metric) => bodyWeight.includes(metric)),
+    [selectedMetrics]
   );
-  const selectedTotalVolume = selectedMetrics.filter((metric) =>
-    totalVolume.includes(metric)
+  const selectedTotalVolume = useMemo(
+    () => selectedMetrics.filter((metric) => totalVolume.includes(metric)),
+    [selectedMetrics]
   );
-  const selectedBodyFat = selectedMetrics.filter((metric) =>
-    bodyFat.includes(metric)
+  const selectedBodyFat = useMemo(
+    () => selectedMetrics.filter((metric) => bodyFat.includes(metric)),
+    [selectedMetrics]
   );
-  const selectedBodyMeasurements = selectedMetrics.filter((metric) =>
-    bodyMeasurements.includes(metric)
+  const selectedBodyMeasurements = useMemo(
+    () => selectedMetrics.filter((metric) => bodyMeasurements.includes(metric)),
+    [selectedMetrics]
   );
+
+  // Seeded random function for stable data generation
+  const seededRandom = (seed: number) => {
+    const x = Math.sin(seed) * 10000;
+    return x - Math.floor(x);
+  };
 
   // Generate sample progression data based on time filter
   const chartData = useMemo(() => {
-    const getDataPoints = (metrics: string[]) => {
+    const getDataPoints = (metrics: string[], timeFilterParam: string) => {
       const timeMultipliers: { [key: string]: number } = {
         "This Week": 7,
         "This Month": 30,
@@ -94,9 +153,11 @@ const ProgressionChart: React.FC<ProgressionChartProps> = ({
         Lifetime: 1000,
       };
 
-      const days = timeMultipliers[timeFilter] || 7;
+      const days = timeMultipliers[timeFilterParam] || 7;
       const step =
-        timeFilter === "This Week" ? 1 : Math.max(1, Math.floor(days / 10));
+        timeFilterParam === "This Week"
+          ? 1
+          : Math.max(1, Math.floor(days / 10));
 
       // Generate date labels first
       const dateLabels: string[] = [];
@@ -122,59 +183,85 @@ const ProgressionChart: React.FC<ProgressionChartProps> = ({
             const progression =
               Math.sin(i * 0.15 + metricIndex * 0.5) * 0.8 + 1;
             value =
-              Math.round((baseValue * progression + Math.random() * 2) * 10) /
-              10;
+              Math.round(
+                (baseValue * progression + seededRandom(i + metricIndex) * 2) *
+                  10
+              ) / 10;
           } else if (metric === "volume") {
             baseValue = 1500;
             const progression =
               Math.sin(i * 0.12 + metricIndex * 0.3) * 0.6 + 1;
-            value = Math.floor(baseValue * progression + Math.random() * 300);
+            value = Math.floor(
+              baseValue * progression +
+                seededRandom(i + metricIndex + 100) * 300
+            );
           } else if (metric === "bodyfat") {
             baseValue = 15; // Starting body fat percentage
             const progression =
               Math.sin(i * 0.18 + metricIndex * 0.4) * 0.4 + 1;
             value =
-              Math.round((baseValue * progression + Math.random() * 1.5) * 10) /
-              10;
+              Math.round(
+                (baseValue * progression +
+                  seededRandom(i + metricIndex + 200) * 1.5) *
+                  10
+              ) / 10;
           } else if (metric === "arms") {
             baseValue = 35; // Starting arm circumference in cm
             const progression =
               Math.sin(i * 0.14 + metricIndex * 0.6) * 0.5 + 1;
             value =
-              Math.round((baseValue * progression + Math.random() * 1.2) * 10) /
-              10;
+              Math.round(
+                (baseValue * progression +
+                  seededRandom(i + metricIndex + 300) * 1.2) *
+                  10
+              ) / 10;
           } else if (metric === "chest") {
             baseValue = 100; // Starting chest circumference in cm
             const progression =
               Math.sin(i * 0.16 + metricIndex * 0.7) * 0.7 + 1;
             value =
-              Math.round((baseValue * progression + Math.random() * 3) * 10) /
-              10;
+              Math.round(
+                (baseValue * progression +
+                  seededRandom(i + metricIndex + 400) * 3) *
+                  10
+              ) / 10;
           } else if (metric === "shoulders") {
             baseValue = 120; // Starting shoulder circumference in cm
             const progression =
               Math.sin(i * 0.13 + metricIndex * 0.8) * 0.6 + 1;
             value =
-              Math.round((baseValue * progression + Math.random() * 2.5) * 10) /
-              10;
+              Math.round(
+                (baseValue * progression +
+                  seededRandom(i + metricIndex + 400) * 2.5) *
+                  10
+              ) / 10;
           } else if (metric === "neck") {
             baseValue = 40; // Starting neck circumference in cm
             const progression =
               Math.sin(i * 0.17 + metricIndex * 0.9) * 0.3 + 1;
             value =
-              Math.round((baseValue * progression + Math.random() * 0.8) * 10) /
-              10;
+              Math.round(
+                (baseValue * progression +
+                  seededRandom(i + metricIndex + 400) * 0.8) *
+                  10
+              ) / 10;
           } else if (metric === "quads") {
             baseValue = 60; // Starting quad circumference in cm
             const progression =
               Math.sin(i * 0.11 + metricIndex * 1.0) * 0.8 + 1;
             value =
-              Math.round((baseValue * progression + Math.random() * 2) * 10) /
-              10;
+              Math.round(
+                (baseValue * progression +
+                  seededRandom(i + metricIndex + 400) * 2) *
+                  10
+              ) / 10;
           } else {
             baseValue = 200;
             const progression = Math.sin(i * 0.1 + metricIndex * 0.5) * 0.5 + 1;
-            value = Math.floor(baseValue * progression + Math.random() * 100);
+            value = Math.floor(
+              baseValue * progression +
+                seededRandom(i + metricIndex + 400) * 100
+            );
           }
 
           dataPoints.push({
@@ -205,13 +292,19 @@ const ProgressionChart: React.FC<ProgressionChartProps> = ({
     };
 
     return {
-      bodyWeight: getDataPoints(selectedBodyWeight),
-      totalVolume: getDataPoints(selectedTotalVolume),
-      bodyFat: getDataPoints(selectedBodyFat),
-      bodyMeasurements: getDataPoints(selectedBodyMeasurements),
+      bodyWeight: getDataPoints(selectedBodyWeight, bodyWeightTimeFilter),
+      totalVolume: getDataPoints(selectedTotalVolume, totalVolumeTimeFilter),
+      bodyFat: getDataPoints(selectedBodyFat, bodyFatTimeFilter),
+      bodyMeasurements: getDataPoints(
+        selectedBodyMeasurements,
+        bodyMeasurementsTimeFilter
+      ),
     };
   }, [
-    timeFilter,
+    bodyWeightTimeFilter,
+    totalVolumeTimeFilter,
+    bodyFatTimeFilter,
+    bodyMeasurementsTimeFilter,
     selectedBodyWeight,
     selectedTotalVolume,
     selectedBodyFat,
@@ -315,7 +408,7 @@ const ProgressionChart: React.FC<ProgressionChartProps> = ({
   };
 
   return (
-    <>
+    <View className="flex-1">
       {/* Progression Chart Title */}
       <View className="px-4 mb-2">
         <View className="flex-row items-center justify-between">
@@ -454,17 +547,17 @@ const ProgressionChart: React.FC<ProgressionChartProps> = ({
                       style={{ fontFamily: "Outfit-Regular" }}
                     >
                       Last{" "}
-                      {timeFilter === "This Week"
+                      {bodyWeightTimeFilter === "This Week"
                         ? "7"
-                        : timeFilter === "This Month"
+                        : bodyWeightTimeFilter === "This Month"
                           ? "30"
-                          : timeFilter === "3 Months"
+                          : bodyWeightTimeFilter === "3 Months"
                             ? "90"
-                            : timeFilter === "6 Months"
+                            : bodyWeightTimeFilter === "6 Months"
                               ? "180"
-                              : timeFilter === "9 Months"
+                              : bodyWeightTimeFilter === "9 Months"
                                 ? "270"
-                                : timeFilter === "This Year"
+                                : bodyWeightTimeFilter === "This Year"
                                   ? "365"
                                   : "1000"}{" "}
                       days
@@ -483,39 +576,43 @@ const ProgressionChart: React.FC<ProgressionChartProps> = ({
                   <View className="relative">
                     <TouchableOpacity
                       className="flex-row items-center bg-gray-700 rounded-lg px-3 py-2"
-                      onPress={() => setShowTimeDropdown(!showTimeDropdown)}
+                      onPress={() => toggleDropdown("bodyWeight")}
                     >
                       <Text
                         className="text-gray-300 text-sm mr-1"
                         style={{ fontFamily: "Outfit-Regular" }}
                       >
-                        {timeFilter}
+                        {bodyWeightTimeFilter}
                       </Text>
                       <Ionicons
-                        name={showTimeDropdown ? "chevron-up" : "chevron-down"}
+                        name={
+                          showBodyWeightTimeDropdown
+                            ? "chevron-up"
+                            : "chevron-down"
+                        }
                         size={14}
                         color="#9CA3AF"
                       />
                     </TouchableOpacity>
 
-                    {showTimeDropdown && (
+                    {showBodyWeightTimeDropdown && (
                       <View className="absolute top-10 right-0 bg-gray-700 rounded-lg p-2 min-w-32 z-10">
                         {timeFilterOptions.map((option) => (
                           <TouchableOpacity
                             key={option}
                             className={`py-2 px-3 rounded ${
-                              timeFilter === option
+                              bodyWeightTimeFilter === option
                                 ? "bg-accent"
                                 : "bg-transparent"
                             }`}
                             onPress={() => {
-                              setTimeFilter(option);
-                              setShowTimeDropdown(false);
+                              setBodyWeightTimeFilter(option);
+                              setShowBodyWeightTimeDropdown(false);
                             }}
                           >
                             <Text
                               className={`text-sm ${
-                                timeFilter === option
+                                bodyWeightTimeFilter === option
                                   ? "text-black"
                                   : "text-gray-300"
                               }`}
@@ -553,7 +650,7 @@ const ProgressionChart: React.FC<ProgressionChartProps> = ({
                       endOpacity={0.1}
                       initialSpacing={20}
                       endSpacing={20}
-                      spacing={timeFilter === "This Week" ? 50 : 30}
+                      spacing={bodyWeightTimeFilter === "This Week" ? 50 : 30}
                       backgroundColor="transparent"
                       hideRules={true}
                       yAxisColor="transparent"
@@ -617,17 +714,17 @@ const ProgressionChart: React.FC<ProgressionChartProps> = ({
                       style={{ fontFamily: "Outfit-Regular" }}
                     >
                       Last{" "}
-                      {timeFilter === "This Week"
+                      {totalVolumeTimeFilter === "This Week"
                         ? "7"
-                        : timeFilter === "This Month"
+                        : totalVolumeTimeFilter === "This Month"
                           ? "30"
-                          : timeFilter === "3 Months"
+                          : totalVolumeTimeFilter === "3 Months"
                             ? "90"
-                            : timeFilter === "6 Months"
+                            : totalVolumeTimeFilter === "6 Months"
                               ? "180"
-                              : timeFilter === "9 Months"
+                              : totalVolumeTimeFilter === "9 Months"
                                 ? "270"
-                                : timeFilter === "This Year"
+                                : totalVolumeTimeFilter === "This Year"
                                   ? "365"
                                   : "1000"}{" "}
                       days
@@ -646,39 +743,43 @@ const ProgressionChart: React.FC<ProgressionChartProps> = ({
                   <View className="relative">
                     <TouchableOpacity
                       className="flex-row items-center bg-gray-700 rounded-lg px-3 py-2"
-                      onPress={() => setShowTimeDropdown(!showTimeDropdown)}
+                      onPress={() => toggleDropdown("totalVolume")}
                     >
                       <Text
                         className="text-gray-300 text-sm mr-1"
                         style={{ fontFamily: "Outfit-Regular" }}
                       >
-                        {timeFilter}
+                        {totalVolumeTimeFilter}
                       </Text>
                       <Ionicons
-                        name={showTimeDropdown ? "chevron-up" : "chevron-down"}
+                        name={
+                          showTotalVolumeTimeDropdown
+                            ? "chevron-up"
+                            : "chevron-down"
+                        }
                         size={14}
                         color="#9CA3AF"
                       />
                     </TouchableOpacity>
 
-                    {showTimeDropdown && (
+                    {showTotalVolumeTimeDropdown && (
                       <View className="absolute top-10 right-0 bg-gray-700 rounded-lg p-2 min-w-32 z-10">
                         {timeFilterOptions.map((option) => (
                           <TouchableOpacity
                             key={option}
                             className={`py-2 px-3 rounded ${
-                              timeFilter === option
+                              totalVolumeTimeFilter === option
                                 ? "bg-accent"
                                 : "bg-transparent"
                             }`}
                             onPress={() => {
-                              setTimeFilter(option);
-                              setShowTimeDropdown(false);
+                              setTotalVolumeTimeFilter(option);
+                              setShowTotalVolumeTimeDropdown(false);
                             }}
                           >
                             <Text
                               className={`text-sm ${
-                                timeFilter === option
+                                totalVolumeTimeFilter === option
                                   ? "text-black"
                                   : "text-gray-300"
                               }`}
@@ -716,7 +817,7 @@ const ProgressionChart: React.FC<ProgressionChartProps> = ({
                       endOpacity={0.1}
                       initialSpacing={20}
                       endSpacing={20}
-                      spacing={timeFilter === "This Week" ? 50 : 30}
+                      spacing={totalVolumeTimeFilter === "This Week" ? 50 : 30}
                       backgroundColor="transparent"
                       hideRules={true}
                       yAxisColor="transparent"
@@ -780,17 +881,17 @@ const ProgressionChart: React.FC<ProgressionChartProps> = ({
                       style={{ fontFamily: "Outfit-Regular" }}
                     >
                       Last{" "}
-                      {timeFilter === "This Week"
+                      {bodyFatTimeFilter === "This Week"
                         ? "7"
-                        : timeFilter === "This Month"
+                        : bodyFatTimeFilter === "This Month"
                           ? "30"
-                          : timeFilter === "3 Months"
+                          : bodyFatTimeFilter === "3 Months"
                             ? "90"
-                            : timeFilter === "6 Months"
+                            : bodyFatTimeFilter === "6 Months"
                               ? "180"
-                              : timeFilter === "9 Months"
+                              : bodyFatTimeFilter === "9 Months"
                                 ? "270"
-                                : timeFilter === "This Year"
+                                : bodyFatTimeFilter === "This Year"
                                   ? "365"
                                   : "1000"}{" "}
                       days
@@ -809,39 +910,43 @@ const ProgressionChart: React.FC<ProgressionChartProps> = ({
                   <View className="relative">
                     <TouchableOpacity
                       className="flex-row items-center bg-gray-700 rounded-lg px-3 py-2"
-                      onPress={() => setShowTimeDropdown(!showTimeDropdown)}
+                      onPress={() => toggleDropdown("bodyFat")}
                     >
                       <Text
                         className="text-gray-300 text-sm mr-1"
                         style={{ fontFamily: "Outfit-Regular" }}
                       >
-                        {timeFilter}
+                        {bodyFatTimeFilter}
                       </Text>
                       <Ionicons
-                        name={showTimeDropdown ? "chevron-up" : "chevron-down"}
+                        name={
+                          showBodyFatTimeDropdown
+                            ? "chevron-up"
+                            : "chevron-down"
+                        }
                         size={14}
                         color="#9CA3AF"
                       />
                     </TouchableOpacity>
 
-                    {showTimeDropdown && (
+                    {showBodyFatTimeDropdown && (
                       <View className="absolute top-10 right-0 bg-gray-700 rounded-lg p-2 min-w-32 z-10">
                         {timeFilterOptions.map((option) => (
                           <TouchableOpacity
                             key={option}
                             className={`py-2 px-3 rounded ${
-                              timeFilter === option
+                              bodyFatTimeFilter === option
                                 ? "bg-accent"
                                 : "bg-transparent"
                             }`}
                             onPress={() => {
-                              setTimeFilter(option);
-                              setShowTimeDropdown(false);
+                              setBodyFatTimeFilter(option);
+                              setShowBodyFatTimeDropdown(false);
                             }}
                           >
                             <Text
                               className={`text-sm ${
-                                timeFilter === option
+                                bodyFatTimeFilter === option
                                   ? "text-black"
                                   : "text-gray-300"
                               }`}
@@ -879,7 +984,7 @@ const ProgressionChart: React.FC<ProgressionChartProps> = ({
                       endOpacity={0.1}
                       initialSpacing={20}
                       endSpacing={20}
-                      spacing={timeFilter === "This Week" ? 50 : 30}
+                      spacing={bodyFatTimeFilter === "This Week" ? 50 : 30}
                       backgroundColor="transparent"
                       hideRules={true}
                       yAxisColor="transparent"
@@ -945,17 +1050,17 @@ const ProgressionChart: React.FC<ProgressionChartProps> = ({
                       style={{ fontFamily: "Outfit-Regular" }}
                     >
                       Last{" "}
-                      {timeFilter === "This Week"
+                      {bodyMeasurementsTimeFilter === "This Week"
                         ? "7"
-                        : timeFilter === "This Month"
+                        : bodyMeasurementsTimeFilter === "This Month"
                           ? "30"
-                          : timeFilter === "3 Months"
+                          : bodyMeasurementsTimeFilter === "3 Months"
                             ? "90"
-                            : timeFilter === "6 Months"
+                            : bodyMeasurementsTimeFilter === "6 Months"
                               ? "180"
-                              : timeFilter === "9 Months"
+                              : bodyMeasurementsTimeFilter === "9 Months"
                                 ? "270"
-                                : timeFilter === "This Year"
+                                : bodyMeasurementsTimeFilter === "This Year"
                                   ? "365"
                                   : "1000"}{" "}
                       days
@@ -974,39 +1079,43 @@ const ProgressionChart: React.FC<ProgressionChartProps> = ({
                   <View className="relative">
                     <TouchableOpacity
                       className="flex-row items-center bg-gray-700 rounded-lg px-3 py-2"
-                      onPress={() => setShowTimeDropdown(!showTimeDropdown)}
+                      onPress={() => toggleDropdown("bodyMeasurements")}
                     >
                       <Text
                         className="text-gray-300 text-sm mr-1"
                         style={{ fontFamily: "Outfit-Regular" }}
                       >
-                        {timeFilter}
+                        {bodyMeasurementsTimeFilter}
                       </Text>
                       <Ionicons
-                        name={showTimeDropdown ? "chevron-up" : "chevron-down"}
+                        name={
+                          showBodyMeasurementsTimeDropdown
+                            ? "chevron-up"
+                            : "chevron-down"
+                        }
                         size={14}
                         color="#9CA3AF"
                       />
                     </TouchableOpacity>
 
-                    {showTimeDropdown && (
+                    {showBodyMeasurementsTimeDropdown && (
                       <View className="absolute top-10 right-0 bg-gray-700 rounded-lg p-2 min-w-32 z-10">
                         {timeFilterOptions.map((option) => (
                           <TouchableOpacity
                             key={option}
                             className={`py-2 px-3 rounded ${
-                              timeFilter === option
+                              bodyMeasurementsTimeFilter === option
                                 ? "bg-accent"
                                 : "bg-transparent"
                             }`}
                             onPress={() => {
-                              setTimeFilter(option);
-                              setShowTimeDropdown(false);
+                              setBodyMeasurementsTimeFilter(option);
+                              setShowBodyMeasurementsTimeDropdown(false);
                             }}
                           >
                             <Text
                               className={`text-sm ${
-                                timeFilter === option
+                                bodyMeasurementsTimeFilter === option
                                   ? "text-black"
                                   : "text-gray-300"
                               }`}
@@ -1047,7 +1156,9 @@ const ProgressionChart: React.FC<ProgressionChartProps> = ({
                       endOpacity={0.1}
                       initialSpacing={20}
                       endSpacing={20}
-                      spacing={timeFilter === "This Week" ? 50 : 30}
+                      spacing={
+                        bodyMeasurementsTimeFilter === "This Week" ? 50 : 30
+                      }
                       backgroundColor="transparent"
                       hideRules={true}
                       yAxisColor="transparent"
@@ -1105,7 +1216,11 @@ const ProgressionChart: React.FC<ProgressionChartProps> = ({
                             endOpacity={0.05}
                             initialSpacing={20}
                             endSpacing={20}
-                            spacing={timeFilter === "This Week" ? 50 : 30}
+                            spacing={
+                              bodyMeasurementsTimeFilter === "This Week"
+                                ? 50
+                                : 30
+                            }
                             backgroundColor="transparent"
                             hideRules={true}
                             yAxisColor="transparent"
@@ -1160,7 +1275,11 @@ const ProgressionChart: React.FC<ProgressionChartProps> = ({
                             endOpacity={0}
                             initialSpacing={20}
                             endSpacing={20}
-                            spacing={timeFilter === "This Week" ? 50 : 30}
+                            spacing={
+                              bodyMeasurementsTimeFilter === "This Week"
+                                ? 50
+                                : 30
+                            }
                             backgroundColor="transparent"
                             hideRules={true}
                             yAxisColor="transparent"
@@ -1208,7 +1327,7 @@ const ProgressionChart: React.FC<ProgressionChartProps> = ({
           </View>
         </View>
       )}
-    </>
+    </View>
   );
 };
 
