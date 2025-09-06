@@ -61,9 +61,29 @@ const ProgressionChart: React.FC<ProgressionChartProps> = ({
     return colors[index % colors.length];
   };
 
+  // Group metrics by individual charts
+  const bodyWeight = ["weight"];
+  const totalVolume = ["volume"];
+  const bodyFat = ["bodyfat"];
+  const bodyMeasurements = ["arms", "chest", "shoulders", "neck", "quads"];
+
+  // Filter selected metrics by category
+  const selectedBodyWeight = selectedMetrics.filter((metric) =>
+    bodyWeight.includes(metric)
+  );
+  const selectedTotalVolume = selectedMetrics.filter((metric) =>
+    totalVolume.includes(metric)
+  );
+  const selectedBodyFat = selectedMetrics.filter((metric) =>
+    bodyFat.includes(metric)
+  );
+  const selectedBodyMeasurements = selectedMetrics.filter((metric) =>
+    bodyMeasurements.includes(metric)
+  );
+
   // Generate sample progression data based on time filter
   const chartData = useMemo(() => {
-    const getDataPoints = () => {
+    const getDataPoints = (metrics: string[]) => {
       const timeMultipliers: { [key: string]: number } = {
         "This Week": 7,
         "This Month": 30,
@@ -90,8 +110,8 @@ const ProgressionChart: React.FC<ProgressionChartProps> = ({
         dateLabels.push(dateLabel);
       }
 
-      // Generate data for each selected metric
-      const multiLineData = selectedMetrics.map((metric, metricIndex) => {
+      // Generate data for each metric in the provided list
+      const multiLineData = metrics.map((metric, metricIndex) => {
         const dataPoints = [];
 
         for (let i = 0; i < days; i += step) {
@@ -184,14 +204,54 @@ const ProgressionChart: React.FC<ProgressionChartProps> = ({
       return multiLineData;
     };
 
-    return getDataPoints();
-  }, [timeFilter, selectedMetrics]);
+    return {
+      bodyWeight: getDataPoints(selectedBodyWeight),
+      totalVolume: getDataPoints(selectedTotalVolume),
+      bodyFat: getDataPoints(selectedBodyFat),
+      bodyMeasurements: getDataPoints(selectedBodyMeasurements),
+    };
+  }, [
+    timeFilter,
+    selectedBodyWeight,
+    selectedTotalVolume,
+    selectedBodyFat,
+    selectedBodyMeasurements,
+  ]);
 
   // Calculate current value and 30-day change for the first selected metric
   const currentValue = useMemo(() => {
-    if (chartData.length === 0 || selectedMetrics.length === 0)
-      return { value: 0, change: 0 };
-    const firstMetricData = chartData[0];
+    if (selectedMetrics.length === 0) return { value: 0, change: 0 };
+
+    // Get the first selected metric data
+    const firstMetric = selectedMetrics[0];
+    let firstMetricData;
+
+    if (bodyWeight.includes(firstMetric)) {
+      firstMetricData = chartData.bodyWeight.find(
+        (data) =>
+          metricOptions.find((opt) => opt.key === firstMetric)?.label ===
+          data.title
+      );
+    } else if (totalVolume.includes(firstMetric)) {
+      firstMetricData = chartData.totalVolume.find(
+        (data) =>
+          metricOptions.find((opt) => opt.key === firstMetric)?.label ===
+          data.title
+      );
+    } else if (bodyFat.includes(firstMetric)) {
+      firstMetricData = chartData.bodyFat.find(
+        (data) =>
+          metricOptions.find((opt) => opt.key === firstMetric)?.label ===
+          data.title
+      );
+    } else if (bodyMeasurements.includes(firstMetric)) {
+      firstMetricData = chartData.bodyMeasurements.find(
+        (data) =>
+          metricOptions.find((opt) => opt.key === firstMetric)?.label ===
+          data.title
+      );
+    }
+
     if (!firstMetricData || firstMetricData.data.length === 0)
       return { value: 0, change: 0 };
 
@@ -326,301 +386,817 @@ const ProgressionChart: React.FC<ProgressionChartProps> = ({
         </View>
       </View>
 
-      {/* Progression Chart Card */}
-      <View className="px-4 mb-6">
-        <View className="bg-gray-800 rounded-2xl p-6">
-          {/* Header with dropdowns and log button */}
-          <View className="flex-row items-center justify-between mb-6">
-            <View className="flex-1">
-              <Text
-                className="text-gray-400 text-sm"
-                style={{ fontFamily: "Outfit-Regular" }}
-              >
-                Progression (
-                {selectedMetrics[0] === "weight"
-                  ? "kg"
-                  : selectedMetrics[0] === "volume"
-                    ? "kg"
-                    : selectedMetrics[0] === "bodyfat"
-                      ? "%"
-                      : selectedMetrics[0] === "arms" ||
-                          selectedMetrics[0] === "chest" ||
-                          selectedMetrics[0] === "shoulders" ||
-                          selectedMetrics[0] === "neck" ||
-                          selectedMetrics[0] === "quads"
-                        ? "cm"
-                        : "units"}
-                )
-              </Text>
-              <Text
-                className="text-accent text-2xl"
-                style={{ fontFamily: "Outfit-Bold" }}
-              >
-                {selectedMetrics[0] === "weight"
-                  ? currentValue.value.toFixed(1)
-                  : currentValue.value.toLocaleString()}
-              </Text>
-              <View className="flex-row items-center mt-1">
-                <Text
-                  className="text-gray-400 text-sm"
-                  style={{ fontFamily: "Outfit-Regular" }}
+      {/* Selected Metrics Filter Tags */}
+      {selectedMetrics.length > 0 && (
+        <View className="px-4 mb-3">
+          <View className="flex-row flex-wrap gap-2">
+            {selectedMetrics.map((metric, index) => {
+              const metricLabel =
+                metricOptions.find((m) => m.key === metric)?.label || metric;
+              const metricColor = getMetricColor(index);
+              return (
+                <TouchableOpacity
+                  key={metric}
+                  className="flex-row items-center rounded-full px-3 py-1 border"
+                  style={{
+                    backgroundColor: "transparent",
+                    borderColor: metricColor,
+                  }}
+                  onPress={() => removeMetric(metric)}
                 >
-                  Last 30 days
-                </Text>
-                <Ionicons
-                  name={
-                    currentValue.change >= 0 ? "chevron-up" : "chevron-down"
-                  }
-                  size={12}
-                  color={currentValue.change >= 0 ? "#10B981" : "#EF4444"}
-                  style={{ marginLeft: 4 }}
-                />
-                <Text
-                  className={`text-sm ml-1 ${
-                    currentValue.change >= 0 ? "text-green-400" : "text-red-400"
-                  }`}
-                  style={{ fontFamily: "Outfit-Regular" }}
-                >
-                  {Math.abs(currentValue.change).toFixed(1)}
-                </Text>
-              </View>
-            </View>
-
-            {/* Log Button */}
-            <TouchableOpacity className="bg-accent rounded-lg px-4 py-2 ml-4">
-              <Text
-                className="text-black text-sm font-semibold"
-                style={{ fontFamily: "Outfit-SemiBold" }}
-              >
-                LOG
-              </Text>
-            </TouchableOpacity>
+                  <Text
+                    className="text-sm mr-1"
+                    style={{
+                      fontFamily: "Outfit-Regular",
+                      color: metricColor,
+                    }}
+                  >
+                    {metricLabel}
+                  </Text>
+                  <Ionicons name="close" size={14} color={metricColor} />
+                </TouchableOpacity>
+              );
+            })}
           </View>
+        </View>
+      )}
 
-          {/* Selected Metrics Filter Tags */}
-          {selectedMetrics.length > 0 && (
-            <View className="mb-3">
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View className="flex-row space-x-2">
-                  {selectedMetrics.map((metric, index) => {
-                    const metricLabel =
-                      metricOptions.find((m) => m.key === metric)?.label ||
-                      metric;
-                    const metricColor = getMetricColor(index);
-                    return (
-                      <TouchableOpacity
-                        key={metric}
-                        className="flex-row items-center rounded-full px-3 py-1 border"
-                        style={{
-                          backgroundColor: "transparent",
-                          borderColor: metricColor,
-                        }}
-                        onPress={() => removeMetric(metric)}
-                      >
-                        <Text
-                          className="text-sm mr-1"
-                          style={{
-                            fontFamily: "Outfit-Regular",
-                            color: metricColor,
-                          }}
-                        >
-                          {metricLabel}
-                        </Text>
-                        <Ionicons name="close" size={14} color={metricColor} />
-                      </TouchableOpacity>
-                    );
-                  })}
+      {/* Charts */}
+      {selectedMetrics.length > 0 ? (
+        <View>
+          {/* Body Weight Chart (kg) */}
+          {selectedBodyWeight.length > 0 && (
+            <View className="px-4 mb-6">
+              <View className="bg-gray-800 rounded-2xl p-6">
+                {/* Progression Header */}
+                <View className="mb-6">
+                  <Text
+                    className="text-gray-400 text-sm"
+                    style={{ fontFamily: "Outfit-Regular" }}
+                  >
+                    Progression (kg)
+                  </Text>
+                  <Text
+                    className="text-2xl"
+                    style={{
+                      fontFamily: "Outfit-Bold",
+                      color: getMetricColor(selectedMetrics.indexOf("weight")),
+                    }}
+                  >
+                    {chartData.bodyWeight[0]?.data[
+                      chartData.bodyWeight[0].data.length - 1
+                    ]?.value?.toFixed(1) || "0.0"}{" "}
+                    kg
+                  </Text>
+                  <View className="flex-row items-center mt-1">
+                    <Text
+                      className="text-gray-400 text-sm"
+                      style={{ fontFamily: "Outfit-Regular" }}
+                    >
+                      Last{" "}
+                      {timeFilter === "This Week"
+                        ? "7"
+                        : timeFilter === "This Month"
+                          ? "30"
+                          : timeFilter === "3 Months"
+                            ? "90"
+                            : timeFilter === "6 Months"
+                              ? "180"
+                              : timeFilter === "9 Months"
+                                ? "270"
+                                : timeFilter === "This Year"
+                                  ? "365"
+                                  : "1000"}{" "}
+                      days
+                    </Text>
+                  </View>
                 </View>
-              </ScrollView>
+
+                {/* Time Filter Dropdown */}
+                <View className="flex-row items-center justify-between mb-4">
+                  <Text
+                    className="text-gray-300 text-lg"
+                    style={{ fontFamily: "Outfit-SemiBold" }}
+                  >
+                    Body Weight (kg)
+                  </Text>
+                  <View className="relative">
+                    <TouchableOpacity
+                      className="flex-row items-center bg-gray-700 rounded-lg px-3 py-2"
+                      onPress={() => setShowTimeDropdown(!showTimeDropdown)}
+                    >
+                      <Text
+                        className="text-gray-300 text-sm mr-1"
+                        style={{ fontFamily: "Outfit-Regular" }}
+                      >
+                        {timeFilter}
+                      </Text>
+                      <Ionicons
+                        name={showTimeDropdown ? "chevron-up" : "chevron-down"}
+                        size={14}
+                        color="#9CA3AF"
+                      />
+                    </TouchableOpacity>
+
+                    {showTimeDropdown && (
+                      <View className="absolute top-10 right-0 bg-gray-700 rounded-lg p-2 min-w-32 z-10">
+                        {timeFilterOptions.map((option) => (
+                          <TouchableOpacity
+                            key={option}
+                            className={`py-2 px-3 rounded ${
+                              timeFilter === option
+                                ? "bg-accent"
+                                : "bg-transparent"
+                            }`}
+                            onPress={() => {
+                              setTimeFilter(option);
+                              setShowTimeDropdown(false);
+                            }}
+                          >
+                            <Text
+                              className={`text-sm ${
+                                timeFilter === option
+                                  ? "text-black"
+                                  : "text-gray-300"
+                              }`}
+                              style={{ fontFamily: "Outfit-Regular" }}
+                            >
+                              {option}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                </View>
+                <View
+                  style={{
+                    position: "relative",
+                    height: 300,
+                    paddingBottom: 20,
+                  }}
+                >
+                  {chartData.bodyWeight[0] && (
+                    <LineChart
+                      data={chartData.bodyWeight[0].data}
+                      width={300}
+                      height={280}
+                      color={getMetricColor(selectedMetrics.indexOf("weight"))}
+                      thickness={3}
+                      startFillColor={getMetricColor(
+                        selectedMetrics.indexOf("weight")
+                      )}
+                      endFillColor={getMetricColor(
+                        selectedMetrics.indexOf("weight")
+                      )}
+                      startOpacity={0.8}
+                      endOpacity={0.1}
+                      initialSpacing={20}
+                      endSpacing={20}
+                      spacing={timeFilter === "This Week" ? 50 : 30}
+                      backgroundColor="transparent"
+                      hideRules={true}
+                      yAxisColor="transparent"
+                      xAxisColor="#374151"
+                      yAxisTextStyle={{
+                        color: "#9CA3AF",
+                        fontSize: 10,
+                        fontFamily: "Outfit-Regular",
+                      }}
+                      xAxisLabelTextStyle={{
+                        color: "#9CA3AF",
+                        fontSize: 8,
+                        fontFamily: "Outfit-Regular",
+                      }}
+                      curved
+                      showVerticalLines
+                      verticalLinesColor="#374151"
+                      dataPointsColor={getMetricColor(
+                        selectedMetrics.indexOf("weight")
+                      )}
+                      dataPointsRadius={4}
+                      dataPointLabelComponent={() => null}
+                      areaChart
+                      onPress={(dataPoint: any) =>
+                        handleDataPointPress(dataPoint, selectedBodyWeight[0])
+                      }
+                    />
+                  )}
+                </View>
+              </View>
             </View>
           )}
 
-          {/* Time Filter Dropdown */}
-          <View className="flex-row items-center justify-between mb-4">
-            <View className="relative">
-              <TouchableOpacity
-                className="flex-row items-center bg-gray-700 rounded-lg px-3 py-2"
-                onPress={() => setShowTimeDropdown(!showTimeDropdown)}
-              >
-                <Text
-                  className="text-gray-300 text-sm mr-1"
-                  style={{ fontFamily: "Outfit-Regular" }}
-                >
-                  {timeFilter}
-                </Text>
-                <Ionicons
-                  name={showTimeDropdown ? "chevron-up" : "chevron-down"}
-                  size={14}
-                  color="#9CA3AF"
-                />
-              </TouchableOpacity>
+          {/* Total Volume Chart (kg) */}
+          {selectedTotalVolume.length > 0 && (
+            <View className="px-4 mb-6">
+              <View className="bg-gray-800 rounded-2xl p-6">
+                {/* Progression Header */}
+                <View className="mb-6">
+                  <Text
+                    className="text-gray-400 text-sm"
+                    style={{ fontFamily: "Outfit-Regular" }}
+                  >
+                    Progression (kg)
+                  </Text>
+                  <Text
+                    className="text-2xl"
+                    style={{
+                      fontFamily: "Outfit-Bold",
+                      color: getMetricColor(selectedMetrics.indexOf("volume")),
+                    }}
+                  >
+                    {chartData.totalVolume[0]?.data[
+                      chartData.totalVolume[0].data.length - 1
+                    ]?.value?.toLocaleString() || "0"}{" "}
+                    kg
+                  </Text>
+                  <View className="flex-row items-center mt-1">
+                    <Text
+                      className="text-gray-400 text-sm"
+                      style={{ fontFamily: "Outfit-Regular" }}
+                    >
+                      Last{" "}
+                      {timeFilter === "This Week"
+                        ? "7"
+                        : timeFilter === "This Month"
+                          ? "30"
+                          : timeFilter === "3 Months"
+                            ? "90"
+                            : timeFilter === "6 Months"
+                              ? "180"
+                              : timeFilter === "9 Months"
+                                ? "270"
+                                : timeFilter === "This Year"
+                                  ? "365"
+                                  : "1000"}{" "}
+                      days
+                    </Text>
+                  </View>
+                </View>
 
-              {showTimeDropdown && (
-                <View className="absolute top-10 left-0 bg-gray-700 rounded-lg p-2 min-w-32 z-10">
-                  {timeFilterOptions.map((option) => (
+                {/* Time Filter Dropdown */}
+                <View className="flex-row items-center justify-between mb-4">
+                  <Text
+                    className="text-gray-300 text-lg"
+                    style={{ fontFamily: "Outfit-SemiBold" }}
+                  >
+                    Total Volume (kg)
+                  </Text>
+                  <View className="relative">
                     <TouchableOpacity
-                      key={option}
-                      className={`py-2 px-3 rounded ${
-                        timeFilter === option ? "bg-accent" : "bg-transparent"
-                      }`}
-                      onPress={() => {
-                        setTimeFilter(option);
-                        setShowTimeDropdown(false);
-                      }}
+                      className="flex-row items-center bg-gray-700 rounded-lg px-3 py-2"
+                      onPress={() => setShowTimeDropdown(!showTimeDropdown)}
                     >
                       <Text
-                        className={`text-sm ${
-                          timeFilter === option ? "text-black" : "text-gray-300"
-                        }`}
+                        className="text-gray-300 text-sm mr-1"
                         style={{ fontFamily: "Outfit-Regular" }}
                       >
-                        {option}
+                        {timeFilter}
                       </Text>
+                      <Ionicons
+                        name={showTimeDropdown ? "chevron-up" : "chevron-down"}
+                        size={14}
+                        color="#9CA3AF"
+                      />
                     </TouchableOpacity>
-                  ))}
+
+                    {showTimeDropdown && (
+                      <View className="absolute top-10 right-0 bg-gray-700 rounded-lg p-2 min-w-32 z-10">
+                        {timeFilterOptions.map((option) => (
+                          <TouchableOpacity
+                            key={option}
+                            className={`py-2 px-3 rounded ${
+                              timeFilter === option
+                                ? "bg-accent"
+                                : "bg-transparent"
+                            }`}
+                            onPress={() => {
+                              setTimeFilter(option);
+                              setShowTimeDropdown(false);
+                            }}
+                          >
+                            <Text
+                              className={`text-sm ${
+                                timeFilter === option
+                                  ? "text-black"
+                                  : "text-gray-300"
+                              }`}
+                              style={{ fontFamily: "Outfit-Regular" }}
+                            >
+                              {option}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
+                  </View>
                 </View>
-              )}
-            </View>
-          </View>
-
-          {/* Chart */}
-          {chartData.length > 0 ? (
-            <View>
-              {/* Primary chart with first metric */}
-              <LineChart
-                data={chartData[0]?.data || []}
-                width={300}
-                height={200}
-                color={chartData[0]?.color || "#17e1c5"}
-                thickness={3}
-                startFillColor={chartData[0]?.color || "#17e1c5"}
-                endFillColor={chartData[0]?.color || "#17e1c5"}
-                startOpacity={0.8}
-                endOpacity={0.1}
-                initialSpacing={20}
-                endSpacing={20}
-                spacing={timeFilter === "This Week" ? 50 : 30}
-                backgroundColor="transparent"
-                hideRules={true}
-                yAxisColor="transparent"
-                xAxisColor="#374151"
-                yAxisTextStyle={{
-                  color: "#9CA3AF",
-                  fontSize: 10,
-                  fontFamily: "Outfit-Regular",
-                }}
-                xAxisLabelTextStyle={{
-                  color: "#9CA3AF",
-                  fontSize: 8,
-                  fontFamily: "Outfit-Regular",
-                }}
-                curved
-                showVerticalLines
-                verticalLinesColor="#374151"
-                dataPointsColor={chartData[0]?.color || "#17e1c5"}
-                dataPointsRadius={4}
-                dataPointLabelComponent={() => null}
-                areaChart
-                onPress={(dataPoint: any) =>
-                  handleDataPointPress(dataPoint, selectedMetrics[0])
-                }
-              />
-
-              {/* Overlay additional lines */}
-              {chartData.slice(1).map((lineData, index) => (
                 <View
-                  key={lineData.title}
-                  style={{ position: "absolute", top: 0, left: 0 }}
+                  style={{
+                    position: "relative",
+                    height: 300,
+                    paddingBottom: 20,
+                  }}
                 >
-                  <LineChart
-                    data={lineData.data}
-                    width={300}
-                    height={200}
-                    color={lineData.color}
-                    thickness={4}
-                    startFillColor={lineData.color}
-                    endFillColor={lineData.color}
-                    startOpacity={0.4}
-                    endOpacity={0.05}
-                    initialSpacing={20}
-                    endSpacing={20}
-                    spacing={timeFilter === "This Week" ? 50 : 30}
-                    backgroundColor="transparent"
-                    hideRules={true}
-                    yAxisColor="transparent"
-                    xAxisColor="transparent"
-                    yAxisTextStyle={{
-                      color: "transparent",
-                      fontSize: 10,
-                      fontFamily: "Outfit-Regular",
-                    }}
-                    xAxisLabelTextStyle={{
-                      color: "transparent",
-                      fontSize: 8,
-                      fontFamily: "Outfit-Regular",
-                    }}
-                    curved
-                    showVerticalLines={false}
-                    verticalLinesColor="transparent"
-                    dataPointsColor={lineData.color}
-                    dataPointsRadius={5}
-                    dataPointLabelComponent={() => null}
-                    areaChart
-                    onPress={(dataPoint: any) =>
-                      handleDataPointPress(dataPoint, lineData.title)
-                    }
-                  />
+                  {chartData.totalVolume[0] && (
+                    <LineChart
+                      data={chartData.totalVolume[0].data}
+                      width={300}
+                      height={280}
+                      color={getMetricColor(selectedMetrics.indexOf("volume"))}
+                      thickness={3}
+                      startFillColor={getMetricColor(
+                        selectedMetrics.indexOf("volume")
+                      )}
+                      endFillColor={getMetricColor(
+                        selectedMetrics.indexOf("volume")
+                      )}
+                      startOpacity={0.8}
+                      endOpacity={0.1}
+                      initialSpacing={20}
+                      endSpacing={20}
+                      spacing={timeFilter === "This Week" ? 50 : 30}
+                      backgroundColor="transparent"
+                      hideRules={true}
+                      yAxisColor="transparent"
+                      xAxisColor="#374151"
+                      yAxisTextStyle={{
+                        color: "#9CA3AF",
+                        fontSize: 10,
+                        fontFamily: "Outfit-Regular",
+                      }}
+                      xAxisLabelTextStyle={{
+                        color: "#9CA3AF",
+                        fontSize: 8,
+                        fontFamily: "Outfit-Regular",
+                      }}
+                      curved
+                      showVerticalLines
+                      verticalLinesColor="#374151"
+                      dataPointsColor={getMetricColor(
+                        selectedMetrics.indexOf("volume")
+                      )}
+                      dataPointsRadius={4}
+                      dataPointLabelComponent={() => null}
+                      areaChart
+                      onPress={(dataPoint: any) =>
+                        handleDataPointPress(dataPoint, selectedTotalVolume[0])
+                      }
+                    />
+                  )}
                 </View>
-              ))}
-
-              {/* Top layer with just the lines and data points */}
-              {chartData.slice(1).map((lineData, index) => (
-                <View
-                  key={`line-${lineData.title}`}
-                  style={{ position: "absolute", top: 0, left: 0 }}
-                >
-                  <LineChart
-                    data={lineData.data}
-                    width={300}
-                    height={200}
-                    color={lineData.color}
-                    thickness={3}
-                    startFillColor="transparent"
-                    endFillColor="transparent"
-                    startOpacity={0}
-                    endOpacity={0}
-                    initialSpacing={20}
-                    endSpacing={20}
-                    spacing={timeFilter === "This Week" ? 50 : 30}
-                    backgroundColor="transparent"
-                    hideRules={true}
-                    yAxisColor="transparent"
-                    xAxisColor="transparent"
-                    yAxisTextStyle={{
-                      color: "transparent",
-                      fontSize: 10,
-                      fontFamily: "Outfit-Regular",
-                    }}
-                    xAxisLabelTextStyle={{
-                      color: "transparent",
-                      fontSize: 8,
-                      fontFamily: "Outfit-Regular",
-                    }}
-                    curved
-                    showVerticalLines={false}
-                    verticalLinesColor="transparent"
-                    dataPointsColor={lineData.color}
-                    dataPointsRadius={5}
-                    dataPointLabelComponent={() => null}
-                    areaChart={false}
-                    onPress={(dataPoint: any) =>
-                      handleDataPointPress(dataPoint, lineData.title)
-                    }
-                  />
-                </View>
-              ))}
+              </View>
             </View>
-          ) : (
+          )}
+
+          {/* Body Fat Chart (%) */}
+          {selectedBodyFat.length > 0 && (
+            <View className="px-4 mb-6">
+              <View className="bg-gray-800 rounded-2xl p-6">
+                {/* Progression Header */}
+                <View className="mb-6">
+                  <Text
+                    className="text-gray-400 text-sm"
+                    style={{ fontFamily: "Outfit-Regular" }}
+                  >
+                    Progression (%)
+                  </Text>
+                  <Text
+                    className="text-2xl"
+                    style={{
+                      fontFamily: "Outfit-Bold",
+                      color: getMetricColor(selectedMetrics.indexOf("bodyfat")),
+                    }}
+                  >
+                    {chartData.bodyFat[0]?.data[
+                      chartData.bodyFat[0].data.length - 1
+                    ]?.value?.toFixed(1) || "0.0"}
+                    %
+                  </Text>
+                  <View className="flex-row items-center mt-1">
+                    <Text
+                      className="text-gray-400 text-sm"
+                      style={{ fontFamily: "Outfit-Regular" }}
+                    >
+                      Last{" "}
+                      {timeFilter === "This Week"
+                        ? "7"
+                        : timeFilter === "This Month"
+                          ? "30"
+                          : timeFilter === "3 Months"
+                            ? "90"
+                            : timeFilter === "6 Months"
+                              ? "180"
+                              : timeFilter === "9 Months"
+                                ? "270"
+                                : timeFilter === "This Year"
+                                  ? "365"
+                                  : "1000"}{" "}
+                      days
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Time Filter Dropdown */}
+                <View className="flex-row items-center justify-between mb-4">
+                  <Text
+                    className="text-gray-300 text-lg"
+                    style={{ fontFamily: "Outfit-SemiBold" }}
+                  >
+                    Body Fat (%)
+                  </Text>
+                  <View className="relative">
+                    <TouchableOpacity
+                      className="flex-row items-center bg-gray-700 rounded-lg px-3 py-2"
+                      onPress={() => setShowTimeDropdown(!showTimeDropdown)}
+                    >
+                      <Text
+                        className="text-gray-300 text-sm mr-1"
+                        style={{ fontFamily: "Outfit-Regular" }}
+                      >
+                        {timeFilter}
+                      </Text>
+                      <Ionicons
+                        name={showTimeDropdown ? "chevron-up" : "chevron-down"}
+                        size={14}
+                        color="#9CA3AF"
+                      />
+                    </TouchableOpacity>
+
+                    {showTimeDropdown && (
+                      <View className="absolute top-10 right-0 bg-gray-700 rounded-lg p-2 min-w-32 z-10">
+                        {timeFilterOptions.map((option) => (
+                          <TouchableOpacity
+                            key={option}
+                            className={`py-2 px-3 rounded ${
+                              timeFilter === option
+                                ? "bg-accent"
+                                : "bg-transparent"
+                            }`}
+                            onPress={() => {
+                              setTimeFilter(option);
+                              setShowTimeDropdown(false);
+                            }}
+                          >
+                            <Text
+                              className={`text-sm ${
+                                timeFilter === option
+                                  ? "text-black"
+                                  : "text-gray-300"
+                              }`}
+                              style={{ fontFamily: "Outfit-Regular" }}
+                            >
+                              {option}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                </View>
+                <View
+                  style={{
+                    position: "relative",
+                    height: 300,
+                    paddingBottom: 20,
+                  }}
+                >
+                  {chartData.bodyFat[0] && (
+                    <LineChart
+                      data={chartData.bodyFat[0].data}
+                      width={300}
+                      height={280}
+                      color={getMetricColor(selectedMetrics.indexOf("bodyfat"))}
+                      thickness={3}
+                      startFillColor={getMetricColor(
+                        selectedMetrics.indexOf("bodyfat")
+                      )}
+                      endFillColor={getMetricColor(
+                        selectedMetrics.indexOf("bodyfat")
+                      )}
+                      startOpacity={0.8}
+                      endOpacity={0.1}
+                      initialSpacing={20}
+                      endSpacing={20}
+                      spacing={timeFilter === "This Week" ? 50 : 30}
+                      backgroundColor="transparent"
+                      hideRules={true}
+                      yAxisColor="transparent"
+                      xAxisColor="#374151"
+                      yAxisTextStyle={{
+                        color: "#9CA3AF",
+                        fontSize: 10,
+                        fontFamily: "Outfit-Regular",
+                      }}
+                      xAxisLabelTextStyle={{
+                        color: "#9CA3AF",
+                        fontSize: 8,
+                        fontFamily: "Outfit-Regular",
+                      }}
+                      curved
+                      showVerticalLines
+                      verticalLinesColor="#374151"
+                      dataPointsColor={getMetricColor(
+                        selectedMetrics.indexOf("bodyfat")
+                      )}
+                      dataPointsRadius={4}
+                      dataPointLabelComponent={() => null}
+                      areaChart
+                      onPress={(dataPoint: any) =>
+                        handleDataPointPress(dataPoint, selectedBodyFat[0])
+                      }
+                    />
+                  )}
+                </View>
+              </View>
+            </View>
+          )}
+
+          {/* Body Measurements Chart (cm) */}
+          {selectedBodyMeasurements.length > 0 && (
+            <View className="px-4 mb-6">
+              <View className="bg-gray-800 rounded-2xl p-6">
+                {/* Progression Header */}
+                <View className="mb-6">
+                  <Text
+                    className="text-gray-400 text-sm"
+                    style={{ fontFamily: "Outfit-Regular" }}
+                  >
+                    Progression (cm)
+                  </Text>
+                  <Text
+                    className="text-2xl"
+                    style={{
+                      fontFamily: "Outfit-Bold",
+                      color: getMetricColor(
+                        selectedMetrics.indexOf(selectedBodyMeasurements[0])
+                      ),
+                    }}
+                  >
+                    {chartData.bodyMeasurements[0]?.data[
+                      chartData.bodyMeasurements[0].data.length - 1
+                    ]?.value?.toFixed(1) || "0.0"}{" "}
+                    cm
+                  </Text>
+                  <View className="flex-row items-center mt-1">
+                    <Text
+                      className="text-gray-400 text-sm"
+                      style={{ fontFamily: "Outfit-Regular" }}
+                    >
+                      Last{" "}
+                      {timeFilter === "This Week"
+                        ? "7"
+                        : timeFilter === "This Month"
+                          ? "30"
+                          : timeFilter === "3 Months"
+                            ? "90"
+                            : timeFilter === "6 Months"
+                              ? "180"
+                              : timeFilter === "9 Months"
+                                ? "270"
+                                : timeFilter === "This Year"
+                                  ? "365"
+                                  : "1000"}{" "}
+                      days
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Time Filter Dropdown */}
+                <View className="flex-row items-center justify-between mb-4">
+                  <Text
+                    className="text-gray-300 text-lg"
+                    style={{ fontFamily: "Outfit-SemiBold" }}
+                  >
+                    Body Measurements (cm)
+                  </Text>
+                  <View className="relative">
+                    <TouchableOpacity
+                      className="flex-row items-center bg-gray-700 rounded-lg px-3 py-2"
+                      onPress={() => setShowTimeDropdown(!showTimeDropdown)}
+                    >
+                      <Text
+                        className="text-gray-300 text-sm mr-1"
+                        style={{ fontFamily: "Outfit-Regular" }}
+                      >
+                        {timeFilter}
+                      </Text>
+                      <Ionicons
+                        name={showTimeDropdown ? "chevron-up" : "chevron-down"}
+                        size={14}
+                        color="#9CA3AF"
+                      />
+                    </TouchableOpacity>
+
+                    {showTimeDropdown && (
+                      <View className="absolute top-10 right-0 bg-gray-700 rounded-lg p-2 min-w-32 z-10">
+                        {timeFilterOptions.map((option) => (
+                          <TouchableOpacity
+                            key={option}
+                            className={`py-2 px-3 rounded ${
+                              timeFilter === option
+                                ? "bg-accent"
+                                : "bg-transparent"
+                            }`}
+                            onPress={() => {
+                              setTimeFilter(option);
+                              setShowTimeDropdown(false);
+                            }}
+                          >
+                            <Text
+                              className={`text-sm ${
+                                timeFilter === option
+                                  ? "text-black"
+                                  : "text-gray-300"
+                              }`}
+                              style={{ fontFamily: "Outfit-Regular" }}
+                            >
+                              {option}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                </View>
+                <View
+                  style={{
+                    position: "relative",
+                    height: 300,
+                    paddingBottom: 20,
+                  }}
+                >
+                  {/* Primary chart with first body measurement */}
+                  {chartData.bodyMeasurements[0] && (
+                    <LineChart
+                      data={chartData.bodyMeasurements[0].data}
+                      width={300}
+                      height={280}
+                      color={getMetricColor(
+                        selectedMetrics.indexOf(selectedBodyMeasurements[0])
+                      )}
+                      thickness={3}
+                      startFillColor={getMetricColor(
+                        selectedMetrics.indexOf(selectedBodyMeasurements[0])
+                      )}
+                      endFillColor={getMetricColor(
+                        selectedMetrics.indexOf(selectedBodyMeasurements[0])
+                      )}
+                      startOpacity={0.8}
+                      endOpacity={0.1}
+                      initialSpacing={20}
+                      endSpacing={20}
+                      spacing={timeFilter === "This Week" ? 50 : 30}
+                      backgroundColor="transparent"
+                      hideRules={true}
+                      yAxisColor="transparent"
+                      xAxisColor="#374151"
+                      yAxisTextStyle={{
+                        color: "#9CA3AF",
+                        fontSize: 10,
+                        fontFamily: "Outfit-Regular",
+                      }}
+                      xAxisLabelTextStyle={{
+                        color: "#9CA3AF",
+                        fontSize: 8,
+                        fontFamily: "Outfit-Regular",
+                      }}
+                      curved
+                      showVerticalLines
+                      verticalLinesColor="#374151"
+                      dataPointsColor={getMetricColor(
+                        selectedMetrics.indexOf(selectedBodyMeasurements[0])
+                      )}
+                      dataPointsRadius={4}
+                      dataPointLabelComponent={() => null}
+                      areaChart
+                      onPress={(dataPoint: any) =>
+                        handleDataPointPress(
+                          dataPoint,
+                          selectedBodyMeasurements[0]
+                        )
+                      }
+                    />
+                  )}
+
+                  {/* Overlay additional body measurement lines */}
+                  {chartData.bodyMeasurements
+                    .slice(1)
+                    .map((lineData, index) => {
+                      const metricKey = selectedBodyMeasurements[index + 1];
+                      const metricColor = getMetricColor(
+                        selectedMetrics.indexOf(metricKey)
+                      );
+                      return (
+                        <View
+                          key={lineData.title}
+                          style={{ position: "absolute", top: 0, left: 0 }}
+                        >
+                          <LineChart
+                            data={lineData.data}
+                            width={300}
+                            height={280}
+                            color={metricColor}
+                            thickness={4}
+                            startFillColor={metricColor}
+                            endFillColor={metricColor}
+                            startOpacity={0.4}
+                            endOpacity={0.05}
+                            initialSpacing={20}
+                            endSpacing={20}
+                            spacing={timeFilter === "This Week" ? 50 : 30}
+                            backgroundColor="transparent"
+                            hideRules={true}
+                            yAxisColor="transparent"
+                            xAxisColor="transparent"
+                            yAxisTextStyle={{
+                              color: "transparent",
+                              fontSize: 10,
+                              fontFamily: "Outfit-Regular",
+                            }}
+                            xAxisLabelTextStyle={{
+                              color: "transparent",
+                              fontSize: 8,
+                              fontFamily: "Outfit-Regular",
+                            }}
+                            curved
+                            showVerticalLines={false}
+                            verticalLinesColor="transparent"
+                            dataPointsColor={metricColor}
+                            dataPointsRadius={5}
+                            dataPointLabelComponent={() => null}
+                            areaChart
+                            onPress={(dataPoint: any) =>
+                              handleDataPointPress(dataPoint, lineData.title)
+                            }
+                          />
+                        </View>
+                      );
+                    })}
+
+                  {/* Top layer with just the lines and data points for body measurements */}
+                  {chartData.bodyMeasurements
+                    .slice(1)
+                    .map((lineData, index) => {
+                      const metricKey = selectedBodyMeasurements[index + 1];
+                      const metricColor = getMetricColor(
+                        selectedMetrics.indexOf(metricKey)
+                      );
+                      return (
+                        <View
+                          key={`line-${lineData.title}`}
+                          style={{ position: "absolute", top: 0, left: 0 }}
+                        >
+                          <LineChart
+                            data={lineData.data}
+                            width={300}
+                            height={280}
+                            color={metricColor}
+                            thickness={3}
+                            startFillColor="transparent"
+                            endFillColor="transparent"
+                            startOpacity={0}
+                            endOpacity={0}
+                            initialSpacing={20}
+                            endSpacing={20}
+                            spacing={timeFilter === "This Week" ? 50 : 30}
+                            backgroundColor="transparent"
+                            hideRules={true}
+                            yAxisColor="transparent"
+                            xAxisColor="transparent"
+                            yAxisTextStyle={{
+                              color: "transparent",
+                              fontSize: 10,
+                              fontFamily: "Outfit-Regular",
+                            }}
+                            xAxisLabelTextStyle={{
+                              color: "transparent",
+                              fontSize: 8,
+                              fontFamily: "Outfit-Regular",
+                            }}
+                            curved
+                            showVerticalLines={false}
+                            verticalLinesColor="transparent"
+                            dataPointsColor={metricColor}
+                            dataPointsRadius={5}
+                            dataPointLabelComponent={() => null}
+                            areaChart={false}
+                            onPress={(dataPoint: any) =>
+                              handleDataPointPress(dataPoint, lineData.title)
+                            }
+                          />
+                        </View>
+                      );
+                    })}
+                </View>
+              </View>
+            </View>
+          )}
+        </View>
+      ) : (
+        <View className="px-4 mb-6">
+          <View className="bg-gray-800 rounded-2xl p-6">
             <View className="items-center justify-center h-48">
               <Text
                 className="text-gray-400 text-base text-center"
@@ -629,9 +1205,9 @@ const ProgressionChart: React.FC<ProgressionChartProps> = ({
                 No progression data available
               </Text>
             </View>
-          )}
+          </View>
         </View>
-      </View>
+      )}
     </>
   );
 };
