@@ -140,6 +140,27 @@ const ProgressionChart: React.FC<ProgressionChartProps> = ({
     return x - Math.floor(x);
   };
 
+  // Helper function to calculate progression change
+  const getProgressionChange = (data: any[]) => {
+    if (!data || data.length < 2) return { change: 0, isIncrease: true };
+    const firstValue = data[0]?.value || 0;
+    const lastValue = data[data.length - 1]?.value || 0;
+    const change = lastValue - firstValue;
+    return { change: Math.abs(change), isIncrease: change >= 0 };
+  };
+
+  // Helper function to get body part name
+  const getBodyPartName = (metric: string) => {
+    const bodyPartNames: { [key: string]: string } = {
+      arms: "arms",
+      chest: "chest",
+      shoulders: "shoulders",
+      neck: "neck",
+      quads: "quads",
+    };
+    return bodyPartNames[metric] || metric;
+  };
+
   // Generate sample progression data based on time filter
   const chartData = useMemo(() => {
     const getDataPoints = (metrics: string[], timeFilterParam: string) => {
@@ -536,10 +557,12 @@ const ProgressionChart: React.FC<ProgressionChartProps> = ({
                       color: getMetricColor(selectedMetrics.indexOf("weight")),
                     }}
                   >
-                    {chartData.bodyWeight[0]?.data[
-                      chartData.bodyWeight[0].data.length - 1
-                    ]?.value?.toFixed(1) || "0.0"}{" "}
-                    kg
+                    {(() => {
+                      const { change, isIncrease } = getProgressionChange(
+                        chartData.bodyWeight[0]?.data || []
+                      );
+                      return `${isIncrease ? "+" : "-"}${change.toFixed(1)} kg`;
+                    })()}
                   </Text>
                   <View className="flex-row items-center mt-1">
                     <Text
@@ -703,10 +726,12 @@ const ProgressionChart: React.FC<ProgressionChartProps> = ({
                       color: getMetricColor(selectedMetrics.indexOf("volume")),
                     }}
                   >
-                    {chartData.totalVolume[0]?.data[
-                      chartData.totalVolume[0].data.length - 1
-                    ]?.value?.toLocaleString() || "0"}{" "}
-                    kg
+                    {(() => {
+                      const { change, isIncrease } = getProgressionChange(
+                        chartData.totalVolume[0]?.data || []
+                      );
+                      return `${isIncrease ? "+" : "-"}${change.toLocaleString()} kg`;
+                    })()}
                   </Text>
                   <View className="flex-row items-center mt-1">
                     <Text
@@ -870,10 +895,12 @@ const ProgressionChart: React.FC<ProgressionChartProps> = ({
                       color: getMetricColor(selectedMetrics.indexOf("bodyfat")),
                     }}
                   >
-                    {chartData.bodyFat[0]?.data[
-                      chartData.bodyFat[0].data.length - 1
-                    ]?.value?.toFixed(1) || "0.0"}
-                    %
+                    {(() => {
+                      const { change, isIncrease } = getProgressionChange(
+                        chartData.bodyFat[0]?.data || []
+                      );
+                      return `${isIncrease ? "+" : "-"}${change.toFixed(1)}%`;
+                    })()}
                   </Text>
                   <View className="flex-row items-center mt-1">
                     <Text
@@ -1030,20 +1057,38 @@ const ProgressionChart: React.FC<ProgressionChartProps> = ({
                   >
                     Progression (cm)
                   </Text>
-                  <Text
-                    className="text-2xl"
-                    style={{
-                      fontFamily: "Outfit-Bold",
-                      color: getMetricColor(
-                        selectedMetrics.indexOf(selectedBodyMeasurements[0])
-                      ),
-                    }}
-                  >
-                    {chartData.bodyMeasurements[0]?.data[
-                      chartData.bodyMeasurements[0].data.length - 1
-                    ]?.value?.toFixed(1) || "0.0"}{" "}
-                    cm
-                  </Text>
+                  <View>
+                    {selectedBodyMeasurements.map((metric, index) => {
+                      const metricData = chartData.bodyMeasurements.find(
+                        (data) =>
+                          data.title ===
+                          (metricOptions.find((opt) => opt.key === metric)
+                            ?.label || metric)
+                      );
+                      if (!metricData) return null;
+
+                      const { change, isIncrease } = getProgressionChange(
+                        metricData.data || []
+                      );
+                      const bodyPart = getBodyPartName(metric);
+                      const metricColor = getMetricColor(
+                        selectedMetrics.indexOf(metric)
+                      );
+
+                      return (
+                        <Text
+                          key={metric}
+                          className="text-2xl"
+                          style={{
+                            fontFamily: "Outfit-Bold",
+                            color: metricColor,
+                          }}
+                        >
+                          {`${isIncrease ? "+" : "-"}${change.toFixed(1)}cm ${isIncrease ? "on" : "off"} ${bodyPart}`}
+                        </Text>
+                      );
+                    })}
+                  </View>
                   <View className="flex-row items-center mt-1">
                     <Text
                       className="text-gray-400 text-sm"
