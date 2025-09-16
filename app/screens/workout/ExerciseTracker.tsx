@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   View,
   Text,
@@ -6,8 +6,13 @@ import {
   SafeAreaView,
   ScrollView,
   TextInput,
+  Modal,
+  Alert,
+  Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import ExerciseHistory from "../../components/ExerciseHistory";
+import ExerciseProgressionChart from "../../components/ExerciseProgressionChart";
 
 interface ExerciseTrackerProps {
   onBack: () => void;
@@ -24,8 +29,19 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
   const [weight, setWeight] = useState(0);
   const [reps, setReps] = useState(0);
   const [savedSets, setSavedSets] = useState<
-    Array<{ weight: number; reps: number; setNumber: number }>
+    Array<{
+      weight: number;
+      reps: number;
+      setNumber: number;
+      date: string;
+      comment?: string;
+      isPersonalRecord?: boolean;
+    }>
   >([]);
+  const [showCommentModal, setShowCommentModal] = useState(false);
+  const [selectedSetIndex, setSelectedSetIndex] = useState<number | null>(null);
+  const [commentText, setCommentText] = useState("");
+  const slideAnimation = useRef(new Animated.Value(0)).current;
 
   const handleWeightChange = (change: number) => {
     const newWeight = weight + change;
@@ -43,10 +59,26 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
 
   const handleSave = () => {
     console.log(`Saved: ${weight} kgs, ${reps} reps for ${exerciseName}`);
+
+    // Check if this is a personal record (higher weight or same weight with more reps)
+    const isPersonalRecord =
+      savedSets.length === 0 ||
+      savedSets.every(
+        (set) =>
+          set.weight < weight || (set.weight === weight && set.reps < reps)
+      );
+
+    // Check if this exact combination already exists (to avoid duplicate PRs)
+    const exactMatchExists = savedSets.some(
+      (set) => set.weight === weight && set.reps === reps
+    );
+
     const newSet = {
       weight: weight,
       reps: reps,
       setNumber: savedSets.length + 1,
+      date: new Date().toISOString(),
+      isPersonalRecord: isPersonalRecord && !exactMatchExists,
     };
     setSavedSets([...savedSets, newSet]);
     // TODO: Save to database
@@ -56,6 +88,46 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
     setWeight(0);
     setReps(0);
   };
+
+  const handleCommentPress = (setIndex: number) => {
+    setSelectedSetIndex(setIndex);
+    setCommentText(savedSets[setIndex].comment || "");
+    setShowCommentModal(true);
+  };
+
+  const handleSaveComment = () => {
+    if (selectedSetIndex !== null) {
+      const updatedSets = [...savedSets];
+      updatedSets[selectedSetIndex].comment = commentText;
+      setSavedSets(updatedSets);
+      setShowCommentModal(false);
+      setCommentText("");
+      setSelectedSetIndex(null);
+    }
+  };
+
+  const handleCancelComment = () => {
+    setShowCommentModal(false);
+    setCommentText("");
+    setSelectedSetIndex(null);
+  };
+
+  const handleTabChange = (tab: string) => {
+    const tabIndex = ["TRACK", "HISTORY", "GRAPH"].indexOf(tab);
+    setActiveTab(tab);
+
+    Animated.timing(slideAnimation, {
+      toValue: tabIndex,
+      duration: 200,
+      useNativeDriver: false,
+    }).start();
+  };
+
+  // Initialize animation value based on current active tab
+  React.useEffect(() => {
+    const initialIndex = ["TRACK", "HISTORY", "GRAPH"].indexOf(activeTab);
+    slideAnimation.setValue(initialIndex);
+  }, []);
 
   return (
     <SafeAreaView className="flex-1 bg-gray-900">
@@ -93,18 +165,18 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
 
           {/* Segmented Control */}
           <View className="bg-gray-700 rounded-3xl p-1">
-            <View className="flex-row ">
-              {["TRACK", "HISTORY", "GRAPH"].map((tab) => (
+            <View className="flex-row relative">
+              {["TRACK", "HISTORY", "GRAPH"].map((tab, index) => (
                 <TouchableOpacity
                   key={tab}
                   className="flex-1 py-3 rounded-lg"
-                  onPress={() => setActiveTab(tab)}
+                  onPress={() => handleTabChange(tab)}
                   style={{ zIndex: 1 }}
                 >
                   <Text
                     className={`text-center text-sm ${
                       activeTab === tab
-                        ? "text-white font-semibold"
+                        ? "text-gray-800 font-semibold"
                         : "text-gray-400"
                     }`}
                     style={{
@@ -117,19 +189,23 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
                 </TouchableOpacity>
               ))}
             </View>
-            {/* Active indicator */}
-            <View
-              className="absolute bg-accent w-1/3 rounded-3xl"
+            {/* Animated Active indicator */}
+            <Animated.View
+              className="absolute bg-accent rounded-3xl"
               style={{
-                left:
-                  activeTab === "TRACK"
-                    ? 4
-                    : activeTab === "HISTORY"
-                      ? "33.33%"
-                      : "66.66%",
+                transform: [
+                  {
+                    translateX: slideAnimation.interpolate({
+                      inputRange: [0, 1, 2],
+                      outputRange: [0, 120, 240], // Adjust these values based on your container width
+                    }),
+                  },
+                ],
+                width: "33.33%",
                 top: 3,
                 height: 40,
                 zIndex: 0,
+                left: 4,
               }}
             />
           </View>
@@ -259,39 +335,49 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
               <View className="mb-4">
                 {savedSets.map((set, index) => (
                   <View key={index} className="bg-gray-800 rounded-lg p-4 mb-3">
-                    <View className="flex-row items-center justify-between">
+                    <View className="flex-row items-center justify-between relative">
                       <View className="flex-row items-center gap-4">
-                        <TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => handleCommentPress(index)}
+                        >
                           <Ionicons
-                            name="chatbubble-outline"
+                            name={
+                              set.comment ? "chatbubble" : "chatbubble-outline"
+                            }
                             size={20}
-                            color="#6b7280"
+                            color={set.comment ? "#17e1c5" : "#6b7280"}
                           />
                         </TouchableOpacity>
                         <View className="flex-row items-center gap-2">
-                          <Ionicons name="trophy" size={20} color="#3b82f6" />
+                          {set.isPersonalRecord && (
+                            <Ionicons name="trophy" size={20} color="#17e1c5" />
+                          )}
                           <Text
                             className="text-white text-sm"
-                            style={{ fontFamily: "Outfit-Medium" }}
+                            style={{ fontFamily: "Outfit-Bold" }}
                           >
                             {set.setNumber}
                           </Text>
                         </View>
+                      </View>
+
+                      {/* Centered Weight */}
+                      <View className="absolute left-1/2 transform -translate-x-1/2">
                         <Text
                           className="text-white text-sm"
                           style={{ fontFamily: "Outfit-Medium" }}
                         >
                           {set.weight} kgs
                         </Text>
-                        <Text
-                          className="text-white text-sm"
-                          style={{ fontFamily: "Outfit-Medium" }}
-                        >
-                          {set.reps} reps
-                        </Text>
                       </View>
+
+                      <Text
+                        className="text-white text-sm"
+                        style={{ fontFamily: "Outfit-Medium" }}
+                      >
+                        {set.reps} reps
+                      </Text>
                     </View>
-                    <View className="h-0.5 bg-gray-700 mt-3" />
                   </View>
                 ))}
               </View>
@@ -300,27 +386,75 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
         )}
 
         {activeTab === "HISTORY" && (
-          <View className="flex-1 items-center justify-center">
-            <Text
-              className="text-gray-400 text-lg"
-              style={{ fontFamily: "Outfit-Regular" }}
-            >
-              No history yet
-            </Text>
-          </View>
+          <ExerciseHistory exerciseName={exerciseName} savedSets={savedSets} />
         )}
 
         {activeTab === "GRAPH" && (
-          <View className="flex-1 items-center justify-center">
-            <Text
-              className="text-gray-400 text-lg"
-              style={{ fontFamily: "Outfit-Regular" }}
-            >
-              No data to display
-            </Text>
-          </View>
+          <ExerciseProgressionChart
+            exerciseName={exerciseName}
+            savedSets={savedSets}
+          />
         )}
       </ScrollView>
+
+      {/* Comment Modal */}
+      <Modal
+        visible={showCommentModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={handleCancelComment}
+        statusBarTranslucent={true}
+        presentationStyle="overFullScreen"
+      >
+        <View className="flex-1 bg-black/50 justify-center items-center px-6">
+          <View className="bg-gray-800 rounded-lg p-6 w-full max-w-sm">
+            <Text
+              className="text-accent text-lg mb-4"
+              style={{ fontFamily: "Outfit-SemiBold" }}
+            >
+              Comment
+            </Text>
+
+            <TextInput
+              className="bg-gray-700 rounded-lg p-3 text-white text-base mb-6"
+              style={{ fontFamily: "Outfit-Regular" }}
+              placeholder="Comment Text ..."
+              placeholderTextColor="#6b7280"
+              value={commentText}
+              onChangeText={setCommentText}
+              multiline
+              numberOfLines={3}
+              textAlignVertical="top"
+            />
+
+            <View className="flex-row gap-3">
+              <TouchableOpacity
+                className="flex-1 bg-gray-700 rounded-lg py-3 items-center"
+                onPress={handleCancelComment}
+              >
+                <Text
+                  className="text-white text-base"
+                  style={{ fontFamily: "Outfit-Medium" }}
+                >
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                className="flex-1 bg-accent rounded-lg py-3 items-center"
+                onPress={handleSaveComment}
+              >
+                <Text
+                  className="text-black text-base"
+                  style={{ fontFamily: "Outfit-Medium" }}
+                >
+                  Save
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
