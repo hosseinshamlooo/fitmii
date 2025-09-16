@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ScrollView,
+  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -85,7 +86,7 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
           </View>
 
           {/* Segmented Control */}
-          <View className="bg-gray-700 rounded-3xl p-1 border border-gray-600">
+          <View className="bg-gray-700 rounded-3xl p-1">
             <View className="flex-row ">
               {["TRACK", "HISTORY", "GRAPH"].map((tab) => (
                 <TouchableOpacity
@@ -149,14 +150,19 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
                 >
                   <Ionicons name="remove" size={20} color="#17e1c5" />
                 </TouchableOpacity>
-                <View className="w-24 h-12 bg-gray-800 rounded-lg items-center justify-center mx-2">
-                  <Text
-                    className="text-white text-lg"
-                    style={{ fontFamily: "Outfit-Bold" }}
-                  >
-                    {weight}
-                  </Text>
-                </View>
+                <TextInput
+                  className="w-24 h-12 bg-gray-800 rounded-lg text-center text-white text-lg mx-2"
+                  style={{ fontFamily: "Outfit-Bold" }}
+                  value={weight.toString()}
+                  onChangeText={(text) => {
+                    const num = parseFloat(text);
+                    if (!isNaN(num) && num >= 0) {
+                      setWeight(num);
+                    }
+                  }}
+                  keyboardType="numeric"
+                  selectTextOnFocus
+                />
                 <TouchableOpacity
                   className="w-12 h-12 bg-gray-800 rounded-lg items-center justify-center ml-4"
                   onPress={() => handleWeightChange(0.5)}
@@ -182,14 +188,19 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
                 >
                   <Ionicons name="remove" size={20} color="#17e1c5" />
                 </TouchableOpacity>
-                <View className="w-24 h-12 bg-gray-800 rounded-lg items-center justify-center mx-2">
-                  <Text
-                    className="text-white text-lg"
-                    style={{ fontFamily: "Outfit-Bold" }}
-                  >
-                    {reps}
-                  </Text>
-                </View>
+                <TextInput
+                  className="w-24 h-12 bg-gray-800 rounded-lg text-center text-white text-lg mx-2"
+                  style={{ fontFamily: "Outfit-Bold" }}
+                  value={reps.toString()}
+                  onChangeText={(text) => {
+                    const num = parseInt(text);
+                    if (!isNaN(num) && num >= 0) {
+                      setReps(num);
+                    }
+                  }}
+                  keyboardType="numeric"
+                  selectTextOnFocus
+                />
                 <TouchableOpacity
                   className="w-12 h-12 bg-gray-800 rounded-lg items-center justify-center ml-4"
                   onPress={() => handleRepsChange(1)}
