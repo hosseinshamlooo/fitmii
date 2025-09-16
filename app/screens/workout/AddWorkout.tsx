@@ -1,12 +1,33 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, BackHandler } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import MuscleGroups from "./MuscleGroups";
+import AllExercises from "./AllExercises";
 
-const AddWorkout = ({ onBack }: { onBack: () => void }) => {
+const AddWorkout = ({
+  onBack,
+  onHome,
+  currentScreen,
+  setCurrentScreen,
+}: {
+  onBack: () => void;
+  onHome: () => void;
+  currentScreen: string;
+  setCurrentScreen: (screen: string) => void;
+}) => {
+  const [showAllExercises, setShowAllExercises] = useState(false);
+  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string | null>(
+    null
+  );
+
   // Handle device back button
   useEffect(() => {
     const backAction = () => {
+      if (showAllExercises) {
+        setShowAllExercises(false);
+        return true; // Prevent default behavior
+      }
       onBack();
       return true; // Prevent default behavior
     };
@@ -17,13 +38,41 @@ const AddWorkout = ({ onBack }: { onBack: () => void }) => {
     );
 
     return () => backHandler.remove();
-  }, [onBack]);
+  }, [onBack, showAllExercises]);
+
+  // Show muscle groups when currentScreen is "muscleGroups"
+  if (currentScreen === "muscleGroups") {
+    return (
+      <MuscleGroups
+        onBack={() => setCurrentScreen("addWorkout")}
+        onHome={onHome}
+        onMuscleGroupSelect={(muscleGroup) => {
+          setSelectedMuscleGroup(muscleGroup);
+          setCurrentScreen("exercises");
+        }}
+      />
+    );
+  }
+
+  // Show specific exercises when currentScreen is "exercises"
+  if (currentScreen === "exercises" && selectedMuscleGroup) {
+    return (
+      <AllExercises
+        onBack={() => setCurrentScreen("muscleGroups")}
+        onHome={onHome}
+        muscleGroup={selectedMuscleGroup}
+      />
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-gray-900">
       {/* Header */}
-      <View className="px-4 pt-2 pb-4 border-b border-gray-800">
-        <View className="flex-row items-center justify-end">
+      <View className="px-4 pt-4 pb-4 border-b border-gray-800">
+        <View className="flex-row items-center justify-between">
+          <TouchableOpacity onPress={onBack}>
+            <Ionicons name="chevron-back" size={24} color="#17e1c5" />
+          </TouchableOpacity>
           <View className="flex-row items-center gap-4">
             <TouchableOpacity>
               <Ionicons name="calendar" size={24} color="#17e1c5" />
@@ -69,8 +118,8 @@ const AddWorkout = ({ onBack }: { onBack: () => void }) => {
         {/* Start New Workout */}
         <TouchableOpacity
           onPress={() => {
-            // TODO: Navigate to workout creation
-            console.log("Start New Workout");
+            console.log("Start New Workout - Opening MuscleGroups");
+            setCurrentScreen("muscleGroups");
           }}
           className="items-center mb-8"
         >

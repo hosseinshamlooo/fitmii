@@ -35,11 +35,6 @@ const navItems: NavItem[] = [
     icon: "people-outline",
     activeIcon: "people",
   },
-  {
-    id: "profile",
-    icon: "settings-outline",
-    activeIcon: "settings",
-  },
 ];
 
 const ButtonNavBar: React.FC<ButtonNavBarProps> = ({

@@ -21,13 +21,26 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("home");
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
   const [showAddWorkout, setShowAddWorkout] = useState(false);
+  const [currentScreen, setCurrentScreen] = useState("dashboard"); // Track current screen
   const slideAnim = useRef(new Animated.Value(0)).current;
 
   const handleTabPress = (tabId: string) => {
     console.log(`Tab pressed: ${tabId}`);
+
+    // Handle home navigation - always go to dashboard
+    if (tabId === "home") {
+      if (showAddWorkout) {
+        setShowAddWorkout(false);
+        setCurrentScreen("dashboard");
+      }
+      setActiveTab("home");
+      return;
+    }
+
     if (tabId === "log") {
       console.log("Opening AddWorkout screen");
       setShowAddWorkout(true);
+      setCurrentScreen("addWorkout");
       // Use setTimeout to ensure component is rendered before animation
       setTimeout(() => {
         console.log("Starting slide animation");
@@ -40,6 +53,7 @@ const Dashboard = () => {
     } else {
       setActiveTab(tabId);
       setShowAddWorkout(false);
+      setCurrentScreen("dashboard");
     }
   };
 
@@ -449,7 +463,14 @@ const Dashboard = () => {
           ],
         }}
       >
-        {showAddWorkout && <AddWorkout onBack={handleBackFromAddWorkout} />}
+        {showAddWorkout && (
+          <AddWorkout
+            onBack={handleBackFromAddWorkout}
+            onHome={() => setShowAddWorkout(false)}
+            currentScreen={currentScreen}
+            setCurrentScreen={setCurrentScreen}
+          />
+        )}
       </Animated.View>
 
       {/* Sticky Bottom Navigation */}
