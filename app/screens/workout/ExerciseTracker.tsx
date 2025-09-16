@@ -23,7 +23,9 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
   const [activeTab, setActiveTab] = useState("TRACK");
   const [weight, setWeight] = useState(5.0);
   const [reps, setReps] = useState(5);
-  const [savedSets, setSavedSets] = useState(1);
+  const [savedSets, setSavedSets] = useState<
+    Array<{ weight: number; reps: number; setNumber: number }>
+  >([]);
 
   const handleWeightChange = (change: number) => {
     const newWeight = weight + change;
@@ -41,14 +43,19 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
 
   const handleSave = () => {
     console.log(`Saved: ${weight} kgs, ${reps} reps for ${exerciseName}`);
-    setSavedSets(savedSets + 1);
+    const newSet = {
+      weight: weight,
+      reps: reps,
+      setNumber: savedSets.length + 1,
+    };
+    setSavedSets([...savedSets, newSet]);
     // TODO: Save to database
   };
 
   const handleClear = () => {
     setWeight(5.0);
     setReps(5);
-    setSavedSets(1);
+    setSavedSets([]);
   };
 
   return (
@@ -145,13 +152,13 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
               <View className="h-0.5 bg-accent mb-4" />
               <View className="flex-row items-center justify-center">
                 <TouchableOpacity
-                  className="w-12 h-12 bg-gray-800 rounded-lg items-center justify-center mr-4"
+                  className="w-12 h-12 bg-gray-800 rounded-2xl items-center justify-center mr-4"
                   onPress={() => handleWeightChange(-0.5)}
                 >
                   <Ionicons name="remove" size={20} color="#17e1c5" />
                 </TouchableOpacity>
                 <TextInput
-                  className="w-24 h-12 bg-gray-800 rounded-lg text-center text-white text-lg mx-2"
+                  className="w-24 h-12 bg-gray-800 rounded-3xl text-center text-white text-lg mx-2"
                   style={{ fontFamily: "Outfit-Bold" }}
                   value={weight.toString()}
                   onChangeText={(text) => {
@@ -164,7 +171,7 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
                   selectTextOnFocus
                 />
                 <TouchableOpacity
-                  className="w-12 h-12 bg-gray-800 rounded-lg items-center justify-center ml-4"
+                  className="w-12 h-12 bg-gray-800 rounded-2xl items-center justify-center ml-4"
                   onPress={() => handleWeightChange(0.5)}
                 >
                   <Ionicons name="add" size={20} color="#17e1c5" />
@@ -183,13 +190,13 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
               <View className="h-0.5 bg-accent mb-4" />
               <View className="flex-row items-center justify-center">
                 <TouchableOpacity
-                  className="w-12 h-12 bg-gray-800 rounded-lg items-center justify-center mr-4"
+                  className="w-12 h-12 bg-gray-800 rounded-2xl items-center justify-center mr-4"
                   onPress={() => handleRepsChange(-1)}
                 >
                   <Ionicons name="remove" size={20} color="#17e1c5" />
                 </TouchableOpacity>
                 <TextInput
-                  className="w-24 h-12 bg-gray-800 rounded-lg text-center text-white text-lg mx-2"
+                  className="w-24 h-12 bg-gray-800 rounded-3xl text-center text-white text-lg mx-2"
                   style={{ fontFamily: "Outfit-Bold" }}
                   value={reps.toString()}
                   onChangeText={(text) => {
@@ -202,7 +209,7 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
                   selectTextOnFocus
                 />
                 <TouchableOpacity
-                  className="w-12 h-12 bg-gray-800 rounded-lg items-center justify-center ml-4"
+                  className="w-12 h-12 bg-gray-800 rounded-2xl items-center justify-center ml-4"
                   onPress={() => handleRepsChange(1)}
                 >
                   <Ionicons name="add" size={20} color="#17e1c5" />
@@ -211,9 +218,9 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
             </View>
 
             {/* Action Buttons */}
-            <View className="flex-row gap-4">
+            <View className="flex-row gap-4 mb-6">
               <TouchableOpacity
-                className="flex-1 bg-accent rounded-lg py-4 items-center"
+                className="flex-1 bg-accent rounded-3xl py-4 items-center"
                 onPress={handleSave}
               >
                 <Text
@@ -224,7 +231,7 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                className="flex-1 bg-blue-500 rounded-lg py-4 items-center"
+                className="flex-1 bg-blue-500 rounded-3xl py-4 items-center"
                 onPress={handleClear}
               >
                 <Text
@@ -235,6 +242,49 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
                 </Text>
               </TouchableOpacity>
             </View>
+
+            {/* Saved Data Display */}
+            {savedSets.length > 0 && (
+              <View className="mb-4">
+                {savedSets.map((set, index) => (
+                  <View key={index} className="bg-gray-800 rounded-lg p-4 mb-3">
+                    <View className="flex-row items-center justify-between">
+                      <View className="flex-row items-center gap-4">
+                        <TouchableOpacity>
+                          <Ionicons
+                            name="chatbubble-outline"
+                            size={20}
+                            color="#6b7280"
+                          />
+                        </TouchableOpacity>
+                        <View className="flex-row items-center gap-2">
+                          <Ionicons name="trophy" size={20} color="#3b82f6" />
+                          <Text
+                            className="text-white text-sm"
+                            style={{ fontFamily: "Outfit-Medium" }}
+                          >
+                            {set.setNumber}
+                          </Text>
+                        </View>
+                        <Text
+                          className="text-white text-sm"
+                          style={{ fontFamily: "Outfit-Medium" }}
+                        >
+                          {set.weight} kgs
+                        </Text>
+                        <Text
+                          className="text-white text-sm"
+                          style={{ fontFamily: "Outfit-Medium" }}
+                        >
+                          {set.reps} reps
+                        </Text>
+                      </View>
+                    </View>
+                    <View className="h-0.5 bg-gray-700 mt-3" />
+                  </View>
+                ))}
+              </View>
+            )}
           </View>
         )}
 
