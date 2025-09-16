@@ -21,8 +21,8 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
   exerciseName,
 }) => {
   const [activeTab, setActiveTab] = useState("TRACK");
-  const [weight, setWeight] = useState(5.0);
-  const [reps, setReps] = useState(5);
+  const [weight, setWeight] = useState(0);
+  const [reps, setReps] = useState(0);
   const [savedSets, setSavedSets] = useState<
     Array<{ weight: number; reps: number; setNumber: number }>
   >([]);
@@ -53,9 +53,8 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
   };
 
   const handleClear = () => {
-    setWeight(5.0);
-    setReps(5);
-    setSavedSets([]);
+    setWeight(0);
+    setReps(0);
   };
 
   return (
@@ -160,11 +159,17 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
                 <TextInput
                   className="w-24 h-12 bg-gray-800 rounded-3xl text-center text-white text-lg mx-2"
                   style={{ fontFamily: "Outfit-Bold" }}
-                  value={weight.toString()}
+                  value={weight === 0 ? "" : weight.toString()}
+                  placeholder="0"
+                  placeholderTextColor="#6b7280"
                   onChangeText={(text) => {
-                    const num = parseFloat(text);
-                    if (!isNaN(num) && num >= 0) {
-                      setWeight(num);
+                    if (text === "") {
+                      setWeight(0);
+                    } else {
+                      const num = parseFloat(text);
+                      if (!isNaN(num) && num >= 0) {
+                        setWeight(num);
+                      }
                     }
                   }}
                   keyboardType="numeric"
@@ -198,11 +203,17 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
                 <TextInput
                   className="w-24 h-12 bg-gray-800 rounded-3xl text-center text-white text-lg mx-2"
                   style={{ fontFamily: "Outfit-Bold" }}
-                  value={reps.toString()}
+                  value={reps === 0 ? "" : reps.toString()}
+                  placeholder="0"
+                  placeholderTextColor="#6b7280"
                   onChangeText={(text) => {
-                    const num = parseInt(text);
-                    if (!isNaN(num) && num >= 0) {
-                      setReps(num);
+                    if (text === "") {
+                      setReps(0);
+                    } else {
+                      const num = parseInt(text);
+                      if (!isNaN(num) && num >= 0) {
+                        setReps(num);
+                      }
                     }
                   }}
                   keyboardType="numeric"
