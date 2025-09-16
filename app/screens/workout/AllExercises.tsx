@@ -11,7 +11,17 @@ import { Ionicons } from "@expo/vector-icons";
 import ExerciseTracker from "./ExerciseTracker";
 
 interface AllExercisesProps {
-  onBack: () => void;
+  onBack: (
+    savedSets?: Array<{
+      weight: number;
+      reps: number;
+      setNumber: number;
+      date: string;
+      comment?: string;
+      isPersonalRecord?: boolean;
+    }>,
+    exerciseName?: string
+  ) => void;
   onHome: () => void;
   muscleGroup: string;
 }
@@ -148,7 +158,22 @@ const AllExercises: React.FC<AllExercisesProps> = ({
   if (selectedExercise) {
     return (
       <ExerciseTracker
-        onBack={() => setSelectedExercise(null)}
+        onBack={(savedSets) => {
+          console.log("AllExercises received from ExerciseTracker:", {
+            savedSets,
+            selectedExercise,
+          });
+          setSelectedExercise(null);
+          if (savedSets && savedSets.length > 0) {
+            console.log("AllExercises passing to AddWorkout:", {
+              savedSets,
+              selectedExercise,
+            });
+            onBack(savedSets, selectedExercise);
+          } else {
+            onBack();
+          }
+        }}
         onHome={onHome}
         exerciseName={selectedExercise}
       />

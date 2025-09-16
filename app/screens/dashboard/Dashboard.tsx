@@ -17,11 +17,26 @@ import AddWorkout from "../workout/AddWorkout";
 
 const { width } = Dimensions.get("window");
 
+interface SavedSet {
+  weight: number;
+  reps: number;
+  setNumber: number;
+  date: string;
+  comment?: string;
+  isPersonalRecord?: boolean;
+}
+
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("home");
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
   const [showAddWorkout, setShowAddWorkout] = useState(false);
   const [currentScreen, setCurrentScreen] = useState("dashboard"); // Track current screen
+  const [savedWorkouts, setSavedWorkouts] = useState<
+    Array<{
+      exerciseName: string;
+      sets: SavedSet[];
+    }>
+  >([]);
   const slideAnim = useRef(new Animated.Value(0)).current;
 
   const handleTabPress = (tabId: string) => {
@@ -469,6 +484,8 @@ const Dashboard = () => {
             onHome={() => setShowAddWorkout(false)}
             currentScreen={currentScreen}
             setCurrentScreen={setCurrentScreen}
+            savedWorkouts={savedWorkouts}
+            setSavedWorkouts={setSavedWorkouts}
           />
         )}
       </Animated.View>

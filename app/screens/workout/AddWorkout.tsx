@@ -5,16 +5,39 @@ import { Ionicons } from "@expo/vector-icons";
 import MuscleGroups from "./MuscleGroups";
 import AllExercises from "./AllExercises";
 
+interface SavedSet {
+  weight: number;
+  reps: number;
+  setNumber: number;
+  date: string;
+  comment?: string;
+  isPersonalRecord?: boolean;
+}
+
 const AddWorkout = ({
   onBack,
   onHome,
   currentScreen,
   setCurrentScreen,
+  savedWorkouts,
+  setSavedWorkouts,
 }: {
   onBack: () => void;
   onHome: () => void;
   currentScreen: string;
   setCurrentScreen: (screen: string) => void;
+  savedWorkouts: Array<{
+    exerciseName: string;
+    sets: SavedSet[];
+  }>;
+  setSavedWorkouts: React.Dispatch<
+    React.SetStateAction<
+      Array<{
+        exerciseName: string;
+        sets: SavedSet[];
+      }>
+    >
+  >;
 }) => {
   const [showAllExercises, setShowAllExercises] = useState(false);
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string | null>(
@@ -58,7 +81,25 @@ const AddWorkout = ({
   if (currentScreen === "exercises" && selectedMuscleGroup) {
     return (
       <AllExercises
-        onBack={() => setCurrentScreen("muscleGroups")}
+        onBack={(savedSets, exerciseName) => {
+          console.log("AddWorkout received:", { savedSets, exerciseName });
+          if (savedSets && exerciseName) {
+            // Add the saved sets to our workout list
+            setSavedWorkouts((prev) => {
+              // Remove any existing entry for this exercise and add the new one
+              const filtered = prev.filter(
+                (workout) => workout.exerciseName !== exerciseName
+              );
+              const newWorkouts = [
+                ...filtered,
+                { exerciseName, sets: savedSets },
+              ];
+              console.log("Updated savedWorkouts:", newWorkouts);
+              return newWorkouts;
+            });
+          }
+          setCurrentScreen("addWorkout");
+        }}
         onHome={onHome}
         muscleGroup={selectedMuscleGroup}
       />
@@ -77,7 +118,7 @@ const AddWorkout = ({
             <TouchableOpacity>
               <Ionicons name="calendar" size={24} color="#17e1c5" />
             </TouchableOpacity>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => setCurrentScreen("muscleGroups")}>
               <Ionicons name="add" size={24} color="#17e1c5" />
             </TouchableOpacity>
             <TouchableOpacity>
@@ -103,56 +144,118 @@ const AddWorkout = ({
             <Ionicons name="chevron-forward" size={24} color="#17e1c5" />
           </TouchableOpacity>
         </View>
-        <View className="h-0.5 bg-accent mt-2" />
       </View>
 
-      {/* Main Content - Empty State */}
-      <View className="flex-1 justify-center items-center px-8">
-        <Text
-          className="text-gray-400 text-lg mb-12"
-          style={{ fontFamily: "Outfit-Regular" }}
-        >
-          Workout Log Empty
-        </Text>
-
-        {/* Start New Workout */}
-        <TouchableOpacity
-          onPress={() => {
-            console.log("Start New Workout - Opening MuscleGroups");
-            setCurrentScreen("muscleGroups");
-          }}
-          className="items-center mb-8"
-        >
-          <View className="w-16 h-16 bg-accent rounded-full items-center justify-center mb-3">
-            <Ionicons name="add" size={32} color="#000000" />
-          </View>
+      {/* Main Content */}
+      {savedWorkouts.length === 0 ? (
+        <View className="flex-1 justify-center items-center px-8">
           <Text
-            className="text-gray-400 text-base"
-            style={{ fontFamily: "Outfit-Medium" }}
+            className="text-gray-400 text-lg mb-12"
+            style={{ fontFamily: "Outfit-Regular" }}
           >
-            Start New Workout
+            Workout Log Empty
           </Text>
-        </TouchableOpacity>
 
-        {/* Copy Previous Workout */}
-        <TouchableOpacity
-          onPress={() => {
-            // TODO: Navigate to previous workouts
-            console.log("Copy Previous Workout");
-          }}
-          className="items-center"
-        >
-          <View className="w-16 h-16 bg-gray-800 border border-gray-700 rounded-full items-center justify-center mb-3">
-            <Ionicons name="copy" size={24} color="#17e1c5" />
-          </View>
-          <Text
-            className="text-gray-400 text-base"
-            style={{ fontFamily: "Outfit-Medium" }}
+          {/* Start New Workout */}
+          <TouchableOpacity
+            onPress={() => {
+              console.log("Start New Workout - Opening MuscleGroups");
+              setCurrentScreen("muscleGroups");
+            }}
+            className="items-center mb-8"
           >
-            Copy Previous Workout
-          </Text>
-        </TouchableOpacity>
-      </View>
+            <View className="w-16 h-16 bg-accent rounded-full items-center justify-center mb-3">
+              <Ionicons name="add" size={32} color="#000000" />
+            </View>
+            <Text
+              className="text-gray-400 text-base"
+              style={{ fontFamily: "Outfit-Medium" }}
+            >
+              Start New Workout
+            </Text>
+          </TouchableOpacity>
+
+          {/* Copy Previous Workout */}
+          <TouchableOpacity
+            onPress={() => {
+              // TODO: Navigate to previous workouts
+              console.log("Copy Previous Workout");
+            }}
+            className="items-center"
+          >
+            <View className="w-16 h-16 bg-gray-800 border border-gray-700 rounded-full items-center justify-center mb-3">
+              <Ionicons name="copy" size={24} color="#17e1c5" />
+            </View>
+            <Text
+              className="text-gray-400 text-base"
+              style={{ fontFamily: "Outfit-Medium" }}
+            >
+              Copy Previous Workout
+            </Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <View className="flex-1 px-4 py-3">
+          {savedWorkouts.map((workout, index) => (
+            <View key={index} className="mb-4">
+              {/* Exercise Card Container */}
+              <View className="bg-gray-800 rounded-lg p-4">
+                {/* Exercise Name with Accent Line Above */}
+                <Text
+                  className="text-white text-xl mb-4"
+                  style={{ fontFamily: "Outfit-SemiBold" }}
+                >
+                  {workout.exerciseName}
+                </Text>
+
+                {/* Display Sets - Compact format */}
+                {workout.sets.map((set, setIndex) => (
+                  <View
+                    key={setIndex}
+                    className="flex-row items-center justify-between relative py-2"
+                  >
+                    {/* Left: Set number, comment, trophy */}
+                    <View className="flex-row items-center gap-2">
+                      <Text
+                        className="text-white text-lg"
+                        style={{ fontFamily: "Outfit-Bold" }}
+                      >
+                        {set.setNumber}
+                      </Text>
+                      <Ionicons
+                        name={set.comment ? "chatbubble" : "chatbubble-outline"}
+                        size={18}
+                        color={set.comment ? "#17e1c5" : "#6b7280"}
+                      />
+                      {set.isPersonalRecord && (
+                        <Ionicons name="trophy" size={18} color="#17e1c5" />
+                      )}
+                    </View>
+
+                    {/* Center: Weight */}
+                    <View className="absolute left-1/2 transform -translate-x-1/2">
+                      <Text
+                        className="text-white text-lg"
+                        style={{ fontFamily: "Outfit-Medium" }}
+                      >
+                        {set.weight} kgs
+                      </Text>
+                    </View>
+
+                    {/* Right: Reps */}
+                    <Text
+                      className="text-white text-lg"
+                      style={{ fontFamily: "Outfit-Medium" }}
+                    >
+                      {set.reps} reps
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          ))}
+        </View>
+      )}
     </SafeAreaView>
   );
 };

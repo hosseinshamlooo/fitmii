@@ -15,7 +15,16 @@ import ExerciseHistory from "../../components/ExerciseHistory";
 import ExerciseProgressionChart from "../../components/ExerciseProgressionChart";
 
 interface ExerciseTrackerProps {
-  onBack: () => void;
+  onBack: (
+    savedSets?: Array<{
+      weight: number;
+      reps: number;
+      setNumber: number;
+      date: string;
+      comment?: string;
+      isPersonalRecord?: boolean;
+    }>
+  ) => void;
   onHome: () => void;
   exerciseName: string;
 }
@@ -60,27 +69,53 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
   const handleSave = () => {
     console.log(`Saved: ${weight} kgs, ${reps} reps for ${exerciseName}`);
 
-    // Check if this is a personal record (higher weight or same weight with more reps)
-    const isPersonalRecord =
-      savedSets.length === 0 ||
-      savedSets.every(
-        (set) =>
-          set.weight < weight || (set.weight === weight && set.reps < reps)
-      );
-
     // Check if this exact combination already exists (to avoid duplicate PRs)
     const exactMatchExists = savedSets.some(
       (set) => set.weight === weight && set.reps === reps
     );
 
+    // Check if this is a personal record
+    let isPersonalRecord = false;
+
+    if (savedSets.length === 0) {
+      // First set ever is always a PR
+      isPersonalRecord = true;
+    } else if (!exactMatchExists) {
+      // Find the best previous performance
+      const bestPrevious = savedSets.reduce((best, set) => {
+        if (set.weight > best.weight) {
+          return set;
+        } else if (set.weight === best.weight && set.reps > best.reps) {
+          return set;
+        }
+        return best;
+      }, savedSets[0]);
+
+      // Check if current set is better than the best previous
+      isPersonalRecord =
+        weight > bestPrevious.weight ||
+        (weight === bestPrevious.weight && reps > bestPrevious.reps);
+    }
+
+    // Create new set
     const newSet = {
       weight: weight,
       reps: reps,
       setNumber: savedSets.length + 1,
       date: new Date().toISOString(),
-      isPersonalRecord: isPersonalRecord && !exactMatchExists,
+      isPersonalRecord: isPersonalRecord,
     };
-    setSavedSets([...savedSets, newSet]);
+
+    // If this is a new PR, remove PR status from all previous sets
+    let updatedSets = [...savedSets];
+    if (isPersonalRecord) {
+      updatedSets = updatedSets.map((set) => ({
+        ...set,
+        isPersonalRecord: false,
+      }));
+    }
+
+    setSavedSets([...updatedSets, newSet]);
     // TODO: Save to database
   };
 
@@ -136,11 +171,17 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
         <View className="bg-gray-800 rounded-2xl p-6 pt-16">
           <View className="flex-row items-center justify-between mb-6">
             <View className="flex-row items-center">
-              <TouchableOpacity onPress={onBack} className="mr-3">
-                <Ionicons name="menu" size={24} color="#17e1c5" />
+              <TouchableOpacity
+                onPress={() => {
+                  console.log("ExerciseTracker sending savedSets:", savedSets);
+                  onBack(savedSets);
+                }}
+                className="mr-3"
+              >
+                <Ionicons name="menu" size={22} color="#17e1c5" />
               </TouchableOpacity>
               <Text
-                className="text-white text-2xl flex-1"
+                className="text-white text-xl flex-1"
                 style={{ fontFamily: "Outfit-Bold" }}
                 numberOfLines={1}
               >
@@ -349,15 +390,15 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
                           />
                         </TouchableOpacity>
                         <View className="flex-row items-center gap-2">
-                          {set.isPersonalRecord && (
-                            <Ionicons name="trophy" size={20} color="#17e1c5" />
-                          )}
                           <Text
                             className="text-white text-sm"
                             style={{ fontFamily: "Outfit-Bold" }}
                           >
                             {set.setNumber}
                           </Text>
+                          {set.isPersonalRecord && (
+                            <Ionicons name="trophy" size={20} color="#17e1c5" />
+                          )}
                         </View>
                       </View>
 
@@ -406,7 +447,19 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
         statusBarTranslucent={true}
         presentationStyle="overFullScreen"
       >
-        <View className="flex-1 bg-black/50 justify-center items-center px-6">
+        <View
+          className="flex-1 bg-black/70 justify-center items-center px-6"
+          style={{
+            backgroundColor: "rgba(0, 0, 0, 0.7)",
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: "100%",
+            width: "100%",
+          }}
+        >
           <View className="bg-gray-800 rounded-lg p-6 w-full max-w-sm">
             <Text
               className="text-accent text-lg mb-4"
