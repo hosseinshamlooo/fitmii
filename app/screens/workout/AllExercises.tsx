@@ -24,12 +24,24 @@ interface AllExercisesProps {
   ) => void;
   onHome: () => void;
   muscleGroup: string;
+  savedWorkouts?: Array<{
+    exerciseName: string;
+    sets: Array<{
+      weight: number;
+      reps: number;
+      setNumber: number;
+      date: string;
+      comment?: string;
+      isPersonalRecord?: boolean;
+    }>;
+  }>;
 }
 
 const AllExercises: React.FC<AllExercisesProps> = ({
   onBack,
   onHome,
   muscleGroup,
+  savedWorkouts = [],
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedExercise, setSelectedExercise] = useState<string | null>(null);
@@ -156,6 +168,11 @@ const AllExercises: React.FC<AllExercisesProps> = ({
 
   // If an exercise is selected, show the ExerciseTracker
   if (selectedExercise) {
+    // Find existing sets for this exercise
+    const existingWorkout = savedWorkouts.find(
+      (workout) => workout.exerciseName === selectedExercise
+    );
+
     return (
       <ExerciseTracker
         onBack={(savedSets) => {
@@ -176,6 +193,7 @@ const AllExercises: React.FC<AllExercisesProps> = ({
         }}
         onHome={onHome}
         exerciseName={selectedExercise}
+        initialSets={existingWorkout?.sets || []}
       />
     );
   }

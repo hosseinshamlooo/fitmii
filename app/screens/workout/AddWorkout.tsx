@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import MuscleGroups from "./MuscleGroups";
 import AllExercises from "./AllExercises";
+import ExerciseTracker from "./ExerciseTracker";
 
 interface SavedSet {
   weight: number;
@@ -43,6 +44,7 @@ const AddWorkout = ({
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string | null>(
     null
   );
+  const [editingExercise, setEditingExercise] = useState<string | null>(null);
 
   // Handle device back button
   useEffect(() => {
@@ -77,6 +79,53 @@ const AddWorkout = ({
     );
   }
 
+  // Show ExerciseTracker directly when editing an existing exercise
+  if (editingExercise) {
+    const existingWorkout = savedWorkouts.find(
+      (workout) => workout.exerciseName === editingExercise
+    );
+
+    return (
+      <ExerciseTracker
+        onBack={(
+          savedSets?: Array<{
+            weight: number;
+            reps: number;
+            setNumber: number;
+            date: string;
+            comment?: string;
+            isPersonalRecord?: boolean;
+          }>
+        ) => {
+          console.log("AddWorkout received from ExerciseTracker:", {
+            savedSets,
+            editingExercise,
+          });
+          if (savedSets && savedSets.length > 0) {
+            // Update the saved sets for this exercise
+            setSavedWorkouts((prev) => {
+              // Remove any existing entry for this exercise and add the new one
+              const filtered = prev.filter(
+                (workout) => workout.exerciseName !== editingExercise
+              );
+              const newWorkouts = [
+                ...filtered,
+                { exerciseName: editingExercise, sets: savedSets },
+              ];
+              console.log("Updated savedWorkouts:", newWorkouts);
+              return newWorkouts;
+            });
+          }
+          setEditingExercise(null);
+          setCurrentScreen("addWorkout");
+        }}
+        onHome={onHome}
+        exerciseName={editingExercise}
+        initialSets={existingWorkout?.sets || []}
+      />
+    );
+  }
+
   // Show specific exercises when currentScreen is "exercises"
   if (currentScreen === "exercises" && selectedMuscleGroup) {
     return (
@@ -102,6 +151,7 @@ const AddWorkout = ({
         }}
         onHome={onHome}
         muscleGroup={selectedMuscleGroup}
+        savedWorkouts={savedWorkouts}
       />
     );
   }
@@ -210,7 +260,121 @@ const AddWorkout = ({
       ) : (
         <View className="flex-1 px-4 py-3">
           {savedWorkouts.map((workout, index) => (
-            <View key={index} className="mb-4">
+            <TouchableOpacity
+              key={index}
+              className="mb-4"
+              onPress={() => {
+                console.log(
+                  `Opening ExerciseTracker for: ${workout.exerciseName}`
+                );
+                setEditingExercise(workout.exerciseName);
+                // Note: We don't need the muscle group mapping anymore since we're going directly to ExerciseTracker
+                /*
+                const exerciseToMuscleGroup: { [key: string]: string } = {
+                  // Abs
+                  "Ab-Wheel Rollout": "Abs",
+                  "Cable Crunch": "Abs",
+                  Crunch: "Abs",
+                  "Crunch Machine": "Abs",
+                  "Decline Crunch": "Abs",
+                  "Dragon Flag": "Abs",
+                  "Elbow Support Leg Raise": "Abs",
+                  "Hanging Knee Raise": "Abs",
+                  "Hanging Leg Raise": "Abs",
+                  Plank: "Abs",
+                  "Plate Crunch Machine": "Abs",
+                  "Russian Twist w Medicine Ball": "Abs",
+                  "Side Plank": "Abs",
+                  // Back
+                  "Barbell Row": "Back",
+                  "Cable Row": "Back",
+                  Deadlift: "Back",
+                  "Lat Pulldown": "Back",
+                  "Pull-up": "Back",
+                  "Seated Cable Row": "Back",
+                  "T-Bar Row": "Back",
+                  "Wide-Grip Pull-up": "Back",
+                  "Bent-Over Row": "Back",
+                  "One-Arm Dumbbell Row": "Back",
+                  // Biceps
+                  "Barbell Curl": "Biceps",
+                  "Dumbbell Curl": "Biceps",
+                  "Hammer Curl": "Biceps",
+                  "Cable Curl": "Biceps",
+                  "Preacher Curl": "Biceps",
+                  "Concentration Curl": "Biceps",
+                  "Incline Dumbbell Curl": "Biceps",
+                  "21s": "Biceps",
+                  "Spider Curl": "Biceps",
+                  "Reverse Curl": "Biceps",
+                  // Cardio
+                  Running: "Cardio",
+                  Cycling: "Cardio",
+                  Swimming: "Cardio",
+                  Rowing: "Cardio",
+                  Elliptical: "Cardio",
+                  "Jump Rope": "Cardio",
+                  Burpees: "Cardio",
+                  "Mountain Climbers": "Cardio",
+                  "High Knees": "Cardio",
+                  "Jumping Jacks": "Cardio",
+                  // Chest
+                  "Bench Press": "Chest",
+                  "Incline Bench Press": "Chest",
+                  "Decline Bench Press": "Chest",
+                  "Dumbbell Press": "Chest",
+                  "Push-up": "Chest",
+                  "Cable Fly": "Chest",
+                  "Dumbbell Fly": "Chest",
+                  Dips: "Chest",
+                  "Pec Deck": "Chest",
+                  "Incline Dumbbell Fly": "Chest",
+                  // Forearms
+                  "Wrist Curl": "Forearms",
+                  "Reverse Wrist Curl": "Forearms",
+                  "Farmer's Walk": "Forearms",
+                  "Plate Pinch": "Forearms",
+                  "Wrist Roller": "Forearms",
+                  "Grip Squeeze": "Forearms",
+                  "Towel Wring": "Forearms",
+                  "Finger Curl": "Forearms",
+                  // Legs
+                  Squat: "Legs",
+                  Lunge: "Legs",
+                  "Leg Press": "Legs",
+                  "Leg Extension": "Legs",
+                  "Leg Curl": "Legs",
+                  "Calf Raise": "Legs",
+                  "Bulgarian Split Squat": "Legs",
+                  "Romanian Deadlift": "Legs",
+                  "Hack Squat": "Legs",
+                  // Shoulders
+                  "Overhead Press": "Shoulders",
+                  "Lateral Raise": "Shoulders",
+                  "Front Raise": "Shoulders",
+                  "Rear Delt Fly": "Shoulders",
+                  "Arnold Press": "Shoulders",
+                  "Upright Row": "Shoulders",
+                  "Face Pull": "Shoulders",
+                  Shrug: "Shoulders",
+                  "Pike Push-up": "Shoulders",
+                  "Cable Lateral Raise": "Shoulders",
+                  // Triceps
+                  "Close-Grip Bench Press": "Triceps",
+                  "Tricep Dip": "Triceps",
+                  "Overhead Extension": "Triceps",
+                  "Tricep Pushdown": "Triceps",
+                  "Skull Crusher": "Triceps",
+                  "Diamond Push-up": "Triceps",
+                  "Tricep Kickback": "Triceps",
+                  "Overhead Cable Extension": "Triceps",
+                  "Bench Dip": "Triceps",
+                  "Tricep Rope Pushdown": "Triceps",
+                };
+                */
+              }}
+              activeOpacity={0.7}
+            >
               {/* Exercise Card Container */}
               <View className="bg-gray-800 rounded-lg p-4">
                 {/* Exercise Name with Accent Line Above */}
@@ -269,7 +433,7 @@ const AddWorkout = ({
                   </View>
                 ))}
               </View>
-            </View>
+            </TouchableOpacity>
           ))}
         </View>
       )}

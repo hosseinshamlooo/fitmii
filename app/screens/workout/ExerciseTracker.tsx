@@ -27,12 +27,21 @@ interface ExerciseTrackerProps {
   ) => void;
   onHome: () => void;
   exerciseName: string;
+  initialSets?: Array<{
+    weight: number;
+    reps: number;
+    setNumber: number;
+    date: string;
+    comment?: string;
+    isPersonalRecord?: boolean;
+  }>;
 }
 
 const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
   onBack,
   onHome,
   exerciseName,
+  initialSets = [],
 }) => {
   const [activeTab, setActiveTab] = useState("TRACK");
   const [weight, setWeight] = useState(0);
@@ -46,7 +55,7 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
       comment?: string;
       isPersonalRecord?: boolean;
     }>
-  >([]);
+  >(initialSets);
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [selectedSetIndex, setSelectedSetIndex] = useState<number | null>(null);
   const [commentText, setCommentText] = useState("");
