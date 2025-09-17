@@ -1,12 +1,5 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Modal,
-  TextInput,
-} from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Modal } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 interface ExerciseSet {
@@ -178,16 +171,14 @@ const ExerciseHistory: React.FC<ExerciseHistoryProps> = ({
         presentationStyle="overFullScreen"
       >
         <View
-          className="flex-1 bg-black/70 justify-center items-center px-6"
           style={{
+            flex: 1,
             backgroundColor: "rgba(0, 0, 0, 0.7)",
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            height: "100%",
-            width: "100%",
+            justifyContent: "center",
+            alignItems: "center",
+            paddingHorizontal: 24,
+            paddingTop: 0,
+            paddingBottom: 0,
           }}
         >
           <View className="bg-gray-800 rounded-lg p-6 w-full max-w-sm">

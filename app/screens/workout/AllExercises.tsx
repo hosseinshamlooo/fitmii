@@ -185,7 +185,7 @@ const AllExercises: React.FC<AllExercisesProps> = ({
       {/* AddWorkout Header */}
       <View className="px-4 pt-12 mt-2 pb-4 border-b border-gray-800">
         <View className="flex-row items-center justify-between">
-          <TouchableOpacity onPress={onBack}>
+          <TouchableOpacity onPress={() => onBack()}>
             <Ionicons name="chevron-back" size={24} color="#17e1c5" />
           </TouchableOpacity>
           <View className="flex-row items-center gap-4 mt-2">
