@@ -173,12 +173,12 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
             <View className="flex-row items-center">
               <TouchableOpacity
                 onPress={() => {
-                  console.log("ExerciseTracker sending savedSets:", savedSets);
-                  onBack(savedSets);
+                  console.log("ExerciseTracker going back to AllExercises");
+                  onBack();
                 }}
                 className="mr-3"
               >
-                <Ionicons name="menu" size={22} color="#17e1c5" />
+                <Ionicons name="chevron-back" size={22} color="#17e1c5" />
               </TouchableOpacity>
               <Text
                 className="text-white text-xl flex-1"
@@ -437,6 +437,29 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
           />
         )}
       </ScrollView>
+
+      {/* Save Button */}
+      {savedSets.length > 0 && (
+        <View className="px-4 py-4">
+          <TouchableOpacity
+            className="bg-accent rounded-3xl py-4 items-center"
+            onPress={() => {
+              console.log(
+                "Saving sets and going back to AddWorkout:",
+                savedSets
+              );
+              onBack(savedSets);
+            }}
+          >
+            <Text
+              className="text-black text-lg font-semibold"
+              style={{ fontFamily: "Outfit-SemiBold" }}
+            >
+              SAVE EXERCISE
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Comment Modal */}
       <Modal

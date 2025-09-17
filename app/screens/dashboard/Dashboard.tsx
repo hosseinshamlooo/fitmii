@@ -44,16 +44,24 @@ const Dashboard = () => {
 
     // Handle home navigation - always go to dashboard
     if (tabId === "home") {
+      setActiveTab("home"); // Set active tab immediately for visual feedback
       if (showAddWorkout) {
-        setShowAddWorkout(false);
-        setCurrentScreen("dashboard");
+        // Trigger slide animation back to dashboard
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }).start(() => {
+          setShowAddWorkout(false);
+          setCurrentScreen("dashboard");
+        });
       }
-      setActiveTab("home");
       return;
     }
 
     if (tabId === "log") {
       console.log("Opening AddWorkout screen");
+      setActiveTab("log"); // Set active tab immediately for visual feedback
       setShowAddWorkout(true);
       setCurrentScreen("addWorkout");
       // Use setTimeout to ensure component is rendered before animation
@@ -500,10 +508,7 @@ const Dashboard = () => {
           zIndex: 1000,
         }}
       >
-        <ButtonNavBar
-          activeTab={showAddWorkout ? "log" : activeTab}
-          onTabPress={handleTabPress}
-        />
+        <ButtonNavBar activeTab={activeTab} onTabPress={handleTabPress} />
       </View>
     </View>
   );

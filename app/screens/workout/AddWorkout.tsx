@@ -107,42 +107,55 @@ const AddWorkout = ({
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-900">
+    <View className="flex-1 bg-gray-900">
       {/* Header */}
-      <View className="px-4 pt-4 pb-4 border-b border-gray-800">
-        <View className="flex-row items-center justify-between">
-          <TouchableOpacity onPress={onBack}>
-            <Ionicons name="chevron-back" size={24} color="#17e1c5" />
-          </TouchableOpacity>
-          <View className="flex-row items-center gap-4">
-            <TouchableOpacity>
-              <Ionicons name="calendar" size={24} color="#17e1c5" />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setCurrentScreen("muscleGroups")}>
-              <Ionicons name="add" size={24} color="#17e1c5" />
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <Ionicons name="ellipsis-vertical" size={24} color="#17e1c5" />
-            </TouchableOpacity>
+      <View>
+        <View className="bg-gray-800 rounded-2xl p-6 pt-20 mt-[-12]">
+          <View className="flex-row items-center justify-between mb-6">
+            <View className="flex-row items-center">
+              <TouchableOpacity onPress={onBack} className="mr-3">
+                <Ionicons name="chevron-back" size={22} color="#17e1c5" />
+              </TouchableOpacity>
+              <Text
+                className="text-white text-xl flex-1"
+                style={{ fontFamily: "Outfit-Bold" }}
+                numberOfLines={1}
+              >
+                Add Workout
+              </Text>
+            </View>
+            <View className="flex-row items-center gap-4 ml-[-200]">
+              <TouchableOpacity>
+                <Ionicons name="calendar" size={20} color="#17e1c5" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setCurrentScreen("muscleGroups")}
+              >
+                <Ionicons name="add" size={20} color="#17e1c5" />
+              </TouchableOpacity>
+              <TouchableOpacity>
+                <Ionicons name="ellipsis-vertical" size={20} color="#17e1c5" />
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      </View>
 
-      {/* Date Navigation */}
-      <View className="px-4 py-3 border-b border-gray-800">
-        <View className="flex-row items-center justify-between">
-          <TouchableOpacity>
-            <Ionicons name="chevron-back" size={24} color="#17e1c5" />
-          </TouchableOpacity>
-          <Text
-            className="text-white text-lg"
-            style={{ fontFamily: "Outfit-SemiBold" }}
-          >
-            TODAY
-          </Text>
-          <TouchableOpacity>
-            <Ionicons name="chevron-forward" size={24} color="#17e1c5" />
-          </TouchableOpacity>
+          {/* Date Navigation */}
+          <View className="bg-gray-700 rounded-3xl">
+            <View className="flex-row items-center justify-between px-4 py-3">
+              <TouchableOpacity>
+                <Ionicons name="chevron-back" size={20} color="#17e1c5" />
+              </TouchableOpacity>
+              <Text
+                className="text-white text-lg"
+                style={{ fontFamily: "Outfit-SemiBold" }}
+              >
+                TODAY
+              </Text>
+              <TouchableOpacity>
+                <Ionicons name="chevron-forward" size={20} color="#17e1c5" />
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       </View>
 
@@ -212,7 +225,11 @@ const AddWorkout = ({
                 {workout.sets.map((set, setIndex) => (
                   <View
                     key={setIndex}
-                    className="flex-row items-center justify-between relative py-2"
+                    className={`flex-row items-center justify-between relative py-2 ${
+                      setIndex < workout.sets.length - 1
+                        ? "border-b border-gray-700"
+                        : ""
+                    }`}
                   >
                     {/* Left: Set number, comment, trophy */}
                     <View className="flex-row items-center gap-2">
@@ -256,7 +273,7 @@ const AddWorkout = ({
           ))}
         </View>
       )}
-    </SafeAreaView>
+    </View>
   );
 };
 
