@@ -59,6 +59,7 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [selectedSetIndex, setSelectedSetIndex] = useState<number | null>(null);
   const [commentText, setCommentText] = useState("");
+  const [editingSetIndex, setEditingSetIndex] = useState<number | null>(null);
   const slideAnimation = useRef(new Animated.Value(0)).current;
 
   const handleWeightChange = (change: number) => {
@@ -76,61 +77,114 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
   };
 
   const handleSave = () => {
-    console.log(`Saved: ${weight} kgs, ${reps} reps for ${exerciseName}`);
+    if (editingSetIndex !== null) {
+      // Update existing set
+      console.log(
+        `Updated set ${editingSetIndex + 1}: ${weight} kgs, ${reps} reps for ${exerciseName}`
+      );
 
-    // Check if this exact combination already exists (to avoid duplicate PRs)
-    const exactMatchExists = savedSets.some(
-      (set) => set.weight === weight && set.reps === reps
-    );
+      const updatedSets = [...savedSets];
+      updatedSets[editingSetIndex] = {
+        ...updatedSets[editingSetIndex],
+        weight: weight,
+        reps: reps,
+      };
 
-    // Check if this is a personal record
-    let isPersonalRecord = false;
+      // Recalculate personal records for all sets
+      const setsWithUpdatedPRs = recalculatePersonalRecords(updatedSets);
+      setSavedSets(setsWithUpdatedPRs);
 
-    if (savedSets.length === 0) {
-      // First set ever is always a PR
-      isPersonalRecord = true;
-    } else if (!exactMatchExists) {
-      // Find the best previous performance
-      const bestPrevious = savedSets.reduce((best, set) => {
-        if (set.weight > best.weight) {
-          return set;
-        } else if (set.weight === best.weight && set.reps > best.reps) {
-          return set;
-        }
-        return best;
-      }, savedSets[0]);
+      // Clear editing state
+      setEditingSetIndex(null);
+      setWeight(0);
+      setReps(0);
+    } else {
+      // Create new set
+      console.log(`Saved: ${weight} kgs, ${reps} reps for ${exerciseName}`);
 
-      // Check if current set is better than the best previous
-      isPersonalRecord =
-        weight > bestPrevious.weight ||
-        (weight === bestPrevious.weight && reps > bestPrevious.reps);
+      // Check if this exact combination already exists (to avoid duplicate PRs)
+      const exactMatchExists = savedSets.some(
+        (set) => set.weight === weight && set.reps === reps
+      );
+
+      // Check if this is a personal record
+      let isPersonalRecord = false;
+
+      if (savedSets.length === 0) {
+        // First set ever is always a PR
+        isPersonalRecord = true;
+      } else if (!exactMatchExists) {
+        // Find the best previous performance
+        const bestPrevious = savedSets.reduce((best, set) => {
+          if (set.weight > best.weight) {
+            return set;
+          } else if (set.weight === best.weight && set.reps > best.reps) {
+            return set;
+          }
+          return best;
+        }, savedSets[0]);
+
+        // Check if current set is better than the best previous
+        isPersonalRecord =
+          weight > bestPrevious.weight ||
+          (weight === bestPrevious.weight && reps > bestPrevious.reps);
+      }
+
+      // Create new set
+      const newSet = {
+        weight: weight,
+        reps: reps,
+        setNumber: savedSets.length + 1,
+        date: new Date().toISOString(),
+        isPersonalRecord: isPersonalRecord,
+      };
+
+      // If this is a new PR, remove PR status from all previous sets
+      let updatedSets = [...savedSets];
+      if (isPersonalRecord) {
+        updatedSets = updatedSets.map((set) => ({
+          ...set,
+          isPersonalRecord: false,
+        }));
+      }
+
+      setSavedSets([...updatedSets, newSet]);
     }
-
-    // Create new set
-    const newSet = {
-      weight: weight,
-      reps: reps,
-      setNumber: savedSets.length + 1,
-      date: new Date().toISOString(),
-      isPersonalRecord: isPersonalRecord,
-    };
-
-    // If this is a new PR, remove PR status from all previous sets
-    let updatedSets = [...savedSets];
-    if (isPersonalRecord) {
-      updatedSets = updatedSets.map((set) => ({
-        ...set,
-        isPersonalRecord: false,
-      }));
-    }
-
-    setSavedSets([...updatedSets, newSet]);
     // TODO: Save to database
   };
 
   const handleClear = () => {
     setWeight(0);
     setReps(0);
+    setEditingSetIndex(null); // Also clear editing state
+  };
+
+  const handleSetClick = (setIndex: number) => {
+    const setToEdit = savedSets[setIndex];
+    setWeight(setToEdit.weight);
+    setReps(setToEdit.reps);
+    setEditingSetIndex(setIndex);
+  };
+
+  const recalculatePersonalRecords = (sets: typeof savedSets) => {
+    if (sets.length === 0) return sets;
+
+    // Find the best performance (highest weight, then highest reps for same weight)
+    const bestSet = sets.reduce((best, current) => {
+      if (current.weight > best.weight) {
+        return current;
+      } else if (current.weight === best.weight && current.reps > best.reps) {
+        return current;
+      }
+      return best;
+    });
+
+    // Update all sets - only the best one(s) get PR status
+    return sets.map((set) => ({
+      ...set,
+      isPersonalRecord:
+        set.weight === bestSet.weight && set.reps === bestSet.reps,
+    }));
   };
 
   const handleCommentPress = (setIndex: number) => {
@@ -364,7 +418,7 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
                   className="text-black text-base"
                   style={{ fontFamily: "Outfit-Bold" }}
                 >
-                  SAVE
+                  {editingSetIndex !== null ? "UPDATE" : "SAVE"}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -384,7 +438,12 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
             {savedSets.length > 0 && (
               <View className="mb-4">
                 {savedSets.map((set, index) => (
-                  <View key={index} className="bg-gray-800 rounded-lg p-4 mb-3">
+                  <TouchableOpacity
+                    key={index}
+                    className={`bg-gray-800 rounded-lg p-4 mb-3 ${editingSetIndex === index ? "border-2 border-accent" : ""}`}
+                    onPress={() => handleSetClick(index)}
+                    activeOpacity={0.7}
+                  >
                     <View className="flex-row items-center justify-between relative">
                       <View className="flex-row items-center gap-4">
                         <TouchableOpacity
@@ -400,13 +459,13 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
                         </TouchableOpacity>
                         <View className="flex-row items-center gap-2">
                           <Text
-                            className="text-white text-sm"
+                            className="text-white text-base"
                             style={{ fontFamily: "Outfit-Bold" }}
                           >
                             {set.setNumber}
                           </Text>
                           {set.isPersonalRecord && (
-                            <Ionicons name="trophy" size={20} color="#17e1c5" />
+                            <Ionicons name="trophy" size={18} color="#17e1c5" />
                           )}
                         </View>
                       </View>
@@ -414,7 +473,7 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
                       {/* Centered Weight */}
                       <View className="absolute left-1/2 transform -translate-x-1/2">
                         <Text
-                          className="text-white text-sm"
+                          className="text-white text-base"
                           style={{ fontFamily: "Outfit-Medium" }}
                         >
                           {set.weight} kgs
@@ -422,13 +481,13 @@ const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({
                       </View>
 
                       <Text
-                        className="text-white text-sm"
+                        className="text-white text-base"
                         style={{ fontFamily: "Outfit-Medium" }}
                       >
                         {set.reps} reps
                       </Text>
                     </View>
-                  </View>
+                  </TouchableOpacity>
                 ))}
               </View>
             )}
