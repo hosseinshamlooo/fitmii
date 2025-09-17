@@ -45,6 +45,56 @@ const AddWorkout = ({
     null
   );
   const [editingExercise, setEditingExercise] = useState<string | null>(null);
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  // Format date for display
+  const formatDateDisplay = (date: Date) => {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    if (date.toDateString() === today.toDateString()) {
+      return "Today";
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      return "Yesterday";
+    } else if (date.toDateString() === tomorrow.toDateString()) {
+      return "Tomorrow";
+    } else {
+      return date.toLocaleDateString("en-US", {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+      });
+    }
+  };
+
+  // Navigate to previous day
+  const goToPreviousDay = () => {
+    const newDate = new Date(currentDate);
+    newDate.setDate(currentDate.getDate() - 1);
+    setCurrentDate(newDate);
+  };
+
+  // Navigate to next day
+  const goToNextDay = () => {
+    const newDate = new Date(currentDate);
+    newDate.setDate(currentDate.getDate() + 1);
+    setCurrentDate(newDate);
+  };
+
+  // Get workouts for current date (for now, only show workouts for today)
+  const getCurrentDateWorkouts = () => {
+    const today = new Date();
+    if (currentDate.toDateString() === today.toDateString()) {
+      return savedWorkouts;
+    }
+    // Return empty array for other dates (each day starts fresh)
+    return [];
+  };
+
+  const currentDateWorkouts = getCurrentDateWorkouts();
 
   // Handle device back button
   useEffect(() => {
@@ -192,16 +242,16 @@ const AddWorkout = ({
           {/* Date Navigation */}
           <View className="bg-gray-700 rounded-3xl">
             <View className="flex-row items-center justify-between px-4 py-3">
-              <TouchableOpacity>
+              <TouchableOpacity onPress={goToPreviousDay}>
                 <Ionicons name="chevron-back" size={20} color="#17e1c5" />
               </TouchableOpacity>
               <Text
-                className="text-white text-lg"
+                className="text-white text-lg text-center flex-1"
                 style={{ fontFamily: "Outfit-SemiBold" }}
               >
-                TODAY
+                {formatDateDisplay(currentDate)}
               </Text>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={goToNextDay}>
                 <Ionicons name="chevron-forward" size={20} color="#17e1c5" />
               </TouchableOpacity>
             </View>
@@ -210,7 +260,7 @@ const AddWorkout = ({
       </View>
 
       {/* Main Content */}
-      {savedWorkouts.length === 0 ? (
+      {currentDateWorkouts.length === 0 ? (
         <View className="flex-1 justify-center items-center px-8">
           <Text
             className="text-gray-400 text-lg mb-12"
@@ -259,7 +309,7 @@ const AddWorkout = ({
         </View>
       ) : (
         <View className="flex-1 px-4 py-3">
-          {savedWorkouts.map((workout, index) => (
+          {currentDateWorkouts.map((workout, index) => (
             <TouchableOpacity
               key={index}
               className="mb-4"
